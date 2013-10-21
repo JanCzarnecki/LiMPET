@@ -1,0 +1,1 @@
+Two distinct enzymic systems catalyse the biosynthetic conversion of agmatine to putrescine (Cunin et al., 1986). Agmatinase (EC 3.5.3.11, the speB product) catalyses the direct conversion of agmatine to putrescine in bacteria such as Escherichia coli.

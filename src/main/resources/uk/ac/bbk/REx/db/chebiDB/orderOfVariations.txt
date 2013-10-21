@@ -1,0 +1,6 @@
+exact
+squares
+spaces
+nonWordChars
+stereo
+everythingButLetters

@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<analysisEngineDescription xmlns="http://uima.apache.org/resourceSpecifier">
+  <frameworkImplementation>org.apache.uima.java</frameworkImplementation>
+  <primitive>false</primitive>
+  <delegateAnalysisEngineSpecifiers>
+    <delegateAnalysisEngine key="Tokenizer">
+      <import name="org.apache.opennlp.opennlpuima.desc.Tokenizer"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="BANNERAE">
+      <import name="edu.asu.eas.cbioc.banner.desc.BANNERAE"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="SectionAnnotator">
+      <import name="uk.ac.bbk.REx.desc.SectionAnnotator"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="CHEBIAnnotator">
+      <import name="uk.ac.bbk.REx.desc.CHEBIAnnotator"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="AcronymAnnotator">
+      <import name="uk.ac.bbk.REx.desc.AcronymAnnotator"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="ReactionAnnotator">
+      <import name="uk.ac.bbk.REx.desc.ReactionAnnotator"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="RgaiLinnaeusWrapper2">
+      <import name="LinnaeusWrapper.desc.hu.u_szeged.rgai.bio.uima.RgaiLinnaeusWrapper"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="ReactionKeywordAnnotator">
+      <import name="uk.ac.bbk.REx.desc.ReactionKeywordAnnotator"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="SentenceDetector">
+      <import name="org.apache.opennlp.opennlpuima.desc.SentenceDetector"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="ChemicalAnnotator">
+      <import name="uk.ac.bbk.REx.desc.ChemicalAnnotator"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="RgaiLinnaeusWrapper">
+      <import name="LinnaeusWrapper.desc.hu.u_szeged.rgai.bio.uima.RgaiLinnaeusWrapper"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="GeneChemicalConflictResolver">
+      <import name="uk.ac.bbk.REx.desc.GeneChemicalConflictResolver"/>
+    </delegateAnalysisEngine>
+  </delegateAnalysisEngineSpecifiers>
+  <analysisEngineMetaData>
+    <name>RExAnnotator</name>
+    <description/>
+    <version>1.0</version>
+    <vendor/>
+    <configurationParameters searchStrategy="language_fallback">
+      <configurationParameter>
+        <name>opennlp.uima.SentenceType</name>
+        <type>String</type>
+        <multiValued>false</multiValued>
+        <mandatory>true</mandatory>
+        <overrides>
+          <parameter>Tokenizer/opennlp.uima.SentenceType</parameter>
+        </overrides>
+      </configurationParameter>
+      <configurationParameter>
+        <name>opennlp.uima.TokenType</name>
+        <type>String</type>
+        <multiValued>false</multiValued>
+        <mandatory>true</mandatory>
+        <overrides>
+          <parameter>Tokenizer/opennlp.uima.TokenType</parameter>
+        </overrides>
+      </configurationParameter>
+      <configurationParameter>
+        <name>configFile</name>
+        <description>The path to the configuration file for running on a trained model</description>
+        <type>String</type>
+        <multiValued>false</multiValued>
+        <mandatory>true</mandatory>
+        <overrides>
+          <parameter>BANNERAE/configFile</parameter>
+        </overrides>
+      </configurationParameter>
+      <configurationParameter>
+        <name>scoringSettings</name>
+        <type>String</type>
+        <multiValued>false</multiValued>
+        <mandatory>false</mandatory>
+        <overrides>
+          <parameter>ReactionAnnotator/scoringSettings</parameter>
+        </overrides>
+      </configurationParameter>
+      <configurationParameter>
+        <name>organism</name>
+        <type>String</type>
+        <multiValued>false</multiValued>
+        <mandatory>false</mandatory>
+        <overrides>
+          <parameter>ReactionAnnotator/organism</parameter>
+        </overrides>
+      </configurationParameter>
+      <configurationParameter>
+        <name>ConfigFile1</name>
+        <description>Location of the linnaeus parameter file</description>
+        <type>String</type>
+        <multiValued>false</multiValued>
+        <mandatory>false</mandatory>
+        <overrides>
+          <parameter>RgaiLinnaeusWrapper/ConfigFile</parameter>
+        </overrides>
+      </configurationParameter>
+      <configurationParameter>
+        <name>reactionWords</name>
+        <type>String</type>
+        <multiValued>false</multiValued>
+        <mandatory>false</mandatory>
+        <overrides>
+          <parameter>ReactionKeywordAnnotator/reactionWords</parameter>
+        </overrides>
+      </configurationParameter>
+      <configurationParameter>
+        <name>productionWords</name>
+        <type>String</type>
+        <multiValued>false</multiValued>
+        <mandatory>false</mandatory>
+        <overrides>
+          <parameter>ReactionKeywordAnnotator/productionWords</parameter>
+        </overrides>
+      </configurationParameter>
+      <configurationParameter>
+        <name>ConfigFile2</name>
+        <description>Location of the linnaeus parameter file</description>
+        <type>String</type>
+        <multiValued>false</multiValued>
+        <mandatory>false</mandatory>
+        <overrides>
+          <parameter>RgaiLinnaeusWrapper2/ConfigFile</parameter>
+        </overrides>
+      </configurationParameter>
+    </configurationParameters>
+    <configurationParameterSettings>
+      <nameValuePair>
+        <name>opennlp.uima.SentenceType</name>
+        <value>
+          <string>opennlp.uima.Sentence</string>
+        </value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>opennlp.uima.TokenType</name>
+        <value>
+          <string>opennlp.uima.Token</string>
+        </value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>configFile</name>
+        <value>
+          <string>edu/asu/eas/cbioc/banner/models/banner_UIMA_TEST.xml</string>
+        </value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>scoringSettings</name>
+        <value>
+          <string>/uk/ac/bbk/REx/settings/scoringSettings.json</string>
+        </value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>ConfigFile1</name>
+        <value>
+          <string>internal:/uk/ac/man/linnaeus/light/javaProperties.conf</string>
+        </value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>ConfigFile2</name>
+        <value>
+          <string>internal:/uk/ac/man/linnaeus/proxy/javaProperties.conf</string>
+        </value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>reactionWords</name>
+        <value>
+          <string>/uk/ac/bbk/REx/settings/reaction_word_list.txt</string>
+        </value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>productionWords</name>
+        <value>
+          <string>/uk/ac/bbk/REx/settings/production_word_list.txt</string>
+        </value>
+      </nameValuePair>
+    </configurationParameterSettings>
+    <flowConstraints>
+      <fixedFlow>
+        <node>SectionAnnotator</node>
+        <node>SentenceDetector</node>
+        <node>Tokenizer</node>
+        <node>RgaiLinnaeusWrapper</node>
+        <node>RgaiLinnaeusWrapper2</node>
+        <node>BANNERAE</node>
+        <node>ChemicalAnnotator</node>
+        <node>AcronymAnnotator</node>
+        <node>CHEBIAnnotator</node>
+        <node>GeneChemicalConflictResolver</node>
+        <node>ReactionKeywordAnnotator</node>
+        <node>ReactionAnnotator</node>
+      </fixedFlow>
+    </flowConstraints>
+    <fsIndexCollection/>
+    <capabilities>
+      <capability>
+        <inputs/>
+        <outputs/>
+        <languagesSupported/>
+      </capability>
+    </capabilities>
+    <operationalProperties>
+      <modifiesCas>true</modifiesCas>
+      <multipleDeploymentAllowed>true</multipleDeploymentAllowed>
+      <outputsNewCASes>false</outputsNewCASes>
+    </operationalProperties>
+  </analysisEngineMetaData>
+  <resourceManagerConfiguration/>
+</analysisEngineDescription>

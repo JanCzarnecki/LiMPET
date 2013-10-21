@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>hu.u_szeged.rgai.bio.uima.tagger</groupId>
+  <artifactId>linnaeus_wrapper</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <versioning>
+    <versions>
+      <version>0.0.1-SNAPSHOT</version>
+    </versions>
+    <lastUpdated>20130206103034</lastUpdated>
+  </versioning>
+</metadata>

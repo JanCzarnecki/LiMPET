@@ -1,0 +1,185 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version4" level="2" version="4">
+    <model>
+        <listOfCompartments>
+            <compartment id="c" name="cytoplasm" metaid="_c319faca_9a92_45eb_b08b_fb31a49fcd74">
+                <annotation>
+                    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/">
+                        <rdf:Description rdf:about="#_c319faca_9a92_45eb_b08b_fb31a49fcd74">
+                            <bqbiol:is>
+                                <rdf:Bag>
+                                    <rdf:li rdf:resource="urn:miriam:obo.go:GO%3A0005737"/>
+                                </rdf:Bag>
+                            </bqbiol:is>
+                        </rdf:Description>
+                    </rdf:RDF>
+                </annotation>
+            </compartment>
+        </listOfCompartments>
+        <listOfSpecies>
+            <species id="M00024_c" name="acetyl-CoA" metaid="_000000021" compartment="c">
+                <annotation>
+                    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/">
+                        <rdf:Description rdf:about="#_000000021">
+                            <bqbiol:is>
+                                <rdf:Bag>
+                                    <rdf:li rdf:resource="http://rdf.openmolecules.net/?InChI=1S/C23H38N7O17P3S/c1-12(31)51-7-6-25-14(32)4-5-26-21(35)18(34)23(2,3)9-44-50(41,42)47-49(39,40)43-8-13-17(46-48(36,37)38)16(33)22(45-13)30-11-29-15-19(24)27-10-28-20(15)30/h10-11,13,16-18,22,33-34H,4-9H2,1-3H3,(H,25,32)(H,26,35)(H,39,40)(H,41,42)(H2,24,27,28)(H2,36,37,38)"/>
+                                </rdf:Bag>
+                            </bqbiol:is>
+                        </rdf:Description>
+                    </rdf:RDF>
+                </annotation>
+            </species>
+            <species id="M00028_c" name="pyruvate" metaid="_000000002" compartment="c">
+                <annotation>
+                    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/">
+                        <rdf:Description rdf:about="#_000000002">
+                            <bqbiol:is>
+                                <rdf:Bag>
+                                    <rdf:li rdf:resource="http://rdf.openmolecules.net/?InChI=1S/C3H4O3/c1-2(4)3(5)6/h1H3,(H,5,6)"/>
+                                </rdf:Bag>
+                            </bqbiol:is>
+                        </rdf:Description>
+                    </rdf:RDF>
+                </annotation>
+            </species>
+            <species id="M00027_c" name="phosphoenolpyruvate" metaid="_000000022" compartment="c">
+                <annotation>
+                    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/">
+                        <rdf:Description rdf:about="#_000000022">
+                            <bqbiol:is>
+                                <rdf:Bag>
+                                    <rdf:li rdf:resource="http://rdf.openmolecules.net/?InChI=1S/C3H5O6P/c1-2(3(4)5)9-10(6,7)8/h1H2,(H,4,5)(H2,6,7,8)"/>
+                                </rdf:Bag>
+                            </bqbiol:is>
+                        </rdf:Description>
+                    </rdf:RDF>
+                </annotation>
+            </species>
+            <species id="met17" name="ATP" metaid="_000000017" compartment="c">
+                <annotation>
+                    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/">
+                        <rdf:Description rdf:about="#_000000017">
+                            <bqbiol:is>
+                                <rdf:Bag>
+                                    <rdf:li rdf:resource="http://rdf.openmolecules.net/?InChI=1S/C10H16N5O13P3/c11-8-5-9(13-2-12-8)15(3-14-5)10-7(17)6(16)4(26-10)1-25-30(21,22)28-31(23,24)27-29(18,19)20/h2-4,6-7,10,16-17H,1H2,(H,21,22)(H,23,24)(H2,11,12,13)(H2,18,19,20)"/>
+                                </rdf:Bag>
+                            </bqbiol:is>
+                        </rdf:Description>
+                    </rdf:RDF>
+                </annotation>
+            </species>
+            <species id="M00016_c" name="acetate" metaid="_000000023" compartment="c">
+                <annotation>
+                    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/">
+                        <rdf:Description rdf:about="#_000000023">
+                            <bqbiol:is>
+                                <rdf:Bag>
+                                    <rdf:li rdf:resource="http://rdf.openmolecules.net/?InChI=1S/C2H4O2/c1-2(3)4/h1H3,(H,3,4)"/>
+                                </rdf:Bag>
+                            </bqbiol:is>
+                        </rdf:Description>
+                    </rdf:RDF>
+                </annotation>
+            </species>
+        </listOfSpecies>
+        <listOfReactions>
+            <reaction id="rxn24" metaid="_000000024" reversible="true">
+                <annotation>
+                    <rex:rex xmlns:rex="http://www.bbk.ac.uk/rex/">
+                        <rex:extracts>
+                            <rex:extract isInCorrectOrganism="true" source="http://identifiers.org/pubmed/16233230/">
+                                <rex:sentence>Acetyl-CoA synthase couples acetate formation from  acetyl-CoA with the phospholylation of ADP via the mech-  anism of substrate-level phospholylation.</rex:sentence>
+                                <rex:tag id="M00024_c" length="10" start="52" type="substrate"/>
+                                <rex:tag id="M00016_c" length="7" start="28" type="product"/>
+                            </rex:extract>
+                            <rex:extract isInCorrectOrganism="true" source="http://identifiers.org/pubmed/16233230/">
+                                <rex:sentence>According to their  proposal, net ATP can be only obtained from the conversion  of acetyl-CoA to acetate by the acetyl-CoA synthase reac-  tion (Fig. 3).</rex:sentence>
+                                <rex:tag id="M00024_c" length="10" start="83" type="substrate"/>
+                                <rex:tag id="M00016_c" length="7" start="97" type="product"/>
+                            </rex:extract>
+                            <rex:extract isInCorrectOrganism="true" source="http://identifiers.org/pubmed/23093671/">
+                                <rex:sentence>Substrate level phosphorylation from the conversion of phosphoenolpyruvate to pyruvate and the conversion of acetyl-CoA to acetate is responsible for 2.0 ATP per glucose molecule for a total of 3.2 ATP/glucose (4).</rex:sentence>
+                                <rex:tag id="M00027_c" length="19" start="55" type="substrate"/>
+                                <rex:tag id="M00028_c" length="8" start="78" type="substrate"/>
+                                <rex:tag id="M00024_c" length="10" start="109" type="substrate"/>
+                                <rex:tag id="M00016_c" length="7" start="123" type="product"/>
+                            </rex:extract>
+                            <rex:extract isInCorrectOrganism="true" source="http://identifiers.org/pubmed/16233230/">
+                                <rex:sentence>Acetate formation from acetyl-CoA and ATP synthesis are  catalyzed by an acetyl-CoA synthetase (ADP forming).</rex:sentence>
+                                <rex:tag id="M00024_c" length="10" start="23" type="substrate"/>
+                                <rex:tag id="met17" length="3" start="38" type="substrate"/>
+                                <rex:tag id="M00016_c" length="7" start="0" type="product"/>
+                            </rex:extract>
+                            <rex:extract isInCorrectOrganism="true" source="http://identifiers.org/pubmed/18372246/">
+                                <rex:sentence>Next Section Abstract In Archaea, acetate formation and ATP synthesis from acetyl-CoA is catalyzed by an unusual ADP-forming acetyl-CoA synthetase (ACD) (acetyl-CoA + ADP + Pi ⇆ acetate + ATP + HS-CoA) catalyzing the formation of acetate from acetyl-CoA and concomitant ATP synthesis by the mechanism of substrate level phosphorylation.</rex:sentence>
+                                <rex:tag id="M00024_c" length="10" start="243" type="substrate"/>
+                                <rex:tag id="M00016_c" length="7" start="230" type="product"/>
+                            </rex:extract>
+                        </rex:extracts>
+                        <rex:components>
+                            <rex:reactants>
+                                <rex:compound extraction="10.0" id="M00024_c_rxn24_0"  isInBRENDA="true" isInBranch="false" isInSeed="true" relevance="5.0">
+                                    <rex:alternativePathways>
+                                        <rex:pathway id="META000"/>
+                                        <rex:pathway id="META001"/>
+                                    </rex:alternativePathways>
+                                    <rex:otherPathways>
+                                        <rex:pathway id="META002"/>
+                                    </rex:otherPathways>
+                                </rex:compound>
+                                <rex:compound extraction="10.0" id="M00028_c_rxn24_1" isInBRENDA="true" isInBranch="false" isInSeed="true" relevance="5.0">
+                                    <rex:alternativePathways>
+                                        <rex:pathway id="META000"/>
+                                        <rex:pathway id="META001"/>
+                                    </rex:alternativePathways>
+                                    <rex:otherPathways>
+                                        <rex:pathway id="META002"/>
+                                    </rex:otherPathways>
+                                </rex:compound>
+                                <rex:compound extraction="10.0" id="M00027_c_rxn24_2" isInBRENDA="true" isInBranch="false" isInSeed="true" relevance="5.0">
+                                    <rex:alternativePathways>
+                                        <rex:pathway id="META000"/>
+                                        <rex:pathway id="META001"/>
+                                    </rex:alternativePathways>
+                                    <rex:otherPathways>
+                                        <rex:pathway id="META002"/>
+                                    </rex:otherPathways>
+                                </rex:compound>
+                                <rex:compound extraction="10.0" id="met17_rxn24_3" isInBRENDA="true" isInBranch="false" isInSeed="true" relevance="5.0">
+                                    <rex:alternativePathways>
+                                        <rex:pathway id="META000"/>
+                                        <rex:pathway id="META001"/>
+                                    </rex:alternativePathways>
+                                    <rex:otherPathways>
+                                        <rex:pathway id="META002"/>
+                                    </rex:otherPathways>
+                                </rex:compound>
+                            </rex:reactants>
+                            <rex:products>
+                                <rex:compound extraction="10.0" id="M00016_c_rxn24_4" isInBRENDA="true" isInBranch="false" isInSeed="true" relevance="5.0">
+                                    <rex:alternativePathways>
+                                        <rex:pathway id="META000"/>
+                                        <rex:pathway id="META001"/>
+                                    </rex:alternativePathways>
+                                    <rex:otherPathways>
+                                        <rex:pathway id="META002"/>
+                                    </rex:otherPathways>
+                                </rex:compound>
+                            </rex:products>
+                        </rex:components>
+                    </rex:rex>
+                </annotation>
+                <listOfReactants>
+                    <speciesReference id="M00024_c_rxn24_0" species="M00024_c" stoichiometry="1"/>
+                    <speciesReference id="M00028_c_rxn24_1" species="M00028_c" stoichiometry="1"/>
+                    <speciesReference id="M00027_c_rxn24_2" species="M00027_c" stoichiometry="1"/>
+                    <speciesReference id="met17_rxn24_3" species="met17" stoichiometry="1"/>
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference id="M00016_c_rxn24_4" species="M00016_c" stoichiometry="1"/>
+                </listOfProducts>
+            </reaction>
+        </listOfReactions>
+    </model>
+</sbml>

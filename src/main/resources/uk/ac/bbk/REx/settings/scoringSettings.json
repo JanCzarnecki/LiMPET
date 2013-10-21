@@ -1,0 +1,9 @@
+{
+  "keyword": 2.0,
+  "bonus": 2.0,
+  "and": 0.5,
+  "phraseBetweenPenalty": 0.2,
+  "enzymeDistancePenalty": 0.02,
+  "entity": 0.3,
+  "threshold": 3.6
+}
