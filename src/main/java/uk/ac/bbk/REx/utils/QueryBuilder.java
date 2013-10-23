@@ -53,12 +53,21 @@ public class QueryBuilder
         for(String organismName : organismNames)
         {
             count++;
-            if(count > 1)
-            {
-                organismQuery.append(" OR ");
-            }
 
-            organismQuery.append("(\"" + organismName + "\")");
+            //So that eUtils doesn't throw an Error 414.
+            if(organismQuery.length() + organismName.length() <= 3000)
+            {
+                if(count > 1)
+                {
+                    organismQuery.append(" OR ");
+                }
+
+                organismQuery.append("(\"" + organismName + "\")");
+            }
+            else
+            {
+                break;
+            }
         }
         organismQuery.append(")");
 		
@@ -91,14 +100,22 @@ public class QueryBuilder
 					continue;
 				}
 
-				if(count > 1)
-				{
-					chemicalQuery.append(" OR ");
-				}
-				
-				name = name.replaceAll("\\(", "");
-				name = name.replaceAll("\\)", "");
-				chemicalQuery.append("(" + name + ")");
+                //So that eUtils doesn't throw an Error 414.
+                if(chemicalQuery.length() + name.length() <= 3000)
+                {
+                    if(count > 1)
+                    {
+                        chemicalQuery.append(" OR ");
+                    }
+
+                    name = name.replaceAll("\\(", "");
+                    name = name.replaceAll("\\)", "");
+                    chemicalQuery.append("(" + name + ")");
+                }
+                else
+                {
+                    break;
+                }
 			}
 			
 			chemicalQuery.append(")");
