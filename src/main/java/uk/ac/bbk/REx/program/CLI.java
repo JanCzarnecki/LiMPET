@@ -149,8 +149,16 @@ public class CLI
 
             List<MetabolicReaction> combinedReactions = extractReactions(
                     seedReactions, maxReturn, speciesID, speciesNames, queriesStream, pmidCutOffs);
-            speciesNames.close();
-            queriesStream.close();
+
+            if(speciesNames != null)
+            {
+                speciesNames.close();
+            }
+
+            if(queriesStream != null)
+            {
+                queriesStream.close();
+            }
 
             EntityFactory entityFactory = DefaultEntityFactory.getInstance();
             Reconstruction recon = entityFactory.newReconstruction();
