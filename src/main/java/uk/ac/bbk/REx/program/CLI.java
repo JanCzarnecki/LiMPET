@@ -19,9 +19,9 @@ import org.apache.uima.resource.metadata.ConfigurationParameterSettings;
 import org.apache.uima.util.InvalidXMLException;
 import org.apache.uima.util.XMLInputSource;
 import org.sbml.jsbml.SBMLDocument;
-import org.sbml.jsbml.SBMLException;
 import org.sbml.jsbml.SBMLWriter;
 import uk.ac.bbk.REx.db.bkmDB.BKMDB;
+import uk.ac.bbk.REx.exception.BKMException;
 import uk.ac.bbk.REx.exception.CHEBIException;
 import uk.ac.bbk.REx.internalTypes.SeedPathway;
 import uk.ac.bbk.REx.utils.*;
@@ -36,8 +36,6 @@ import uk.ac.ebi.mdk.domain.tool.AutomaticCompartmentResolver;
 import uk.ac.ebi.mdk.io.xml.sbml.SBMLIOUtil;
 import uk.ac.ebi.mdk.io.xml.sbml.SBMLReactionReader;
 
-import javax.xml.bind.JAXBException;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import java.io.*;
 import java.lang.reflect.Type;
@@ -51,26 +49,22 @@ import java.util.logging.Logger;
 
 public class CLI
 {
-    public static void main(String[] args) throws
-            IOException,
-            CHEBIException,
-            XMLStreamException,
-            InvalidXMLException,
-            ResourceInitializationException,
-            CollectionException,
-            AnalysisEngineProcessException,
-            CASException,
-            SBMLException,
-            JAXBException,
-            ParserConfigurationException,
-            ClassNotFoundException,
-            SQLException,
-            InstantiationException,
-            IllegalAccessException
+    public static void main(String[] args)
     {
         System.setProperty("java.util.logging.config.file", "/uk/ac/bbk/REx/settings/log.properties");
         LogManager logMan=LogManager.getLogManager();
-        logMan.readConfiguration(CLI.class.getResourceAsStream("/uk/ac/bbk/REx/settings/log.properties"));
+
+        try
+        {
+            logMan.readConfiguration(CLI.class.getResourceAsStream("/uk/ac/bbk/REx/settings/log.properties"));
+        }
+        catch(IOException e)
+        {
+            System.err.println("Unable to read logging configuration file. The program will continue, but may not be " +
+                    "logged correctly.");
+            logStackTrace(e);
+        }
+
         List<Logger> parentLoggers = new ArrayList<Logger>();
         parentLoggers.add(Logger.getLogger("uk.ac.bbk.REx"));
 
@@ -113,9 +107,31 @@ public class CLI
 
         if(cmd.getOptionValue("m").equals("extraction"))
         {
-            InputStream input = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("i"))));
-            SBMLReactionReader sbmlReader = new SBMLReactionReader(
-                    input, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
+            InputStream input = null;
+            try
+            {
+                input = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("i"))));
+            }
+            catch(FileNotFoundException e)
+            {
+                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("i")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            SBMLReactionReader sbmlReader = null;
+            try
+            {
+                sbmlReader = new SBMLReactionReader(
+                        input, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
+            }
+            catch(XMLStreamException e)
+            {
+                System.err.println("The input XML file could not be read.");
+                logStackTrace(e);
+                System.exit(1);
+            }
+
             List<MetabolicReaction> seedReactions = new ArrayList<MetabolicReaction>();
 
             while(sbmlReader.hasNext())
@@ -123,8 +139,18 @@ public class CLI
                 MetabolicReaction r = sbmlReader.next();
                 seedReactions.add(r);
             }
-            sbmlReader.close();
-            input.close();
+
+            try
+            {
+                sbmlReader.close();
+                input.close();
+            }
+            catch(IOException e)
+            {
+                System.err.println("The stream from the input file could not be closed.");
+                logStackTrace(e);
+                System.exit(1);
+            }
 
             int maxReturn = Integer.parseInt(cmd.getOptionValue("n"));
             String speciesID = cmd.getOptionValue("s");
@@ -132,13 +158,33 @@ public class CLI
             InputStream speciesNames = null;
             if(cmd.hasOption("sn"))
             {
-                speciesNames = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("sn"))));
+                try
+                {
+                    speciesNames = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("sn"))));
+                }
+                catch (FileNotFoundException e)
+                {
+                    System.err.println(String.format("The species name file %s could not be found.",
+                            cmd.getOptionValue("sn")));
+                    logStackTrace(e);
+                    System.exit(1);
+                }
             }
 
             InputStream queriesStream = null;
             if(cmd.hasOption("q"))
             {
-                queriesStream = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("q"))));
+                try
+                {
+                    queriesStream = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("q"))));
+                }
+                catch (FileNotFoundException e)
+                {
+                    System.err.println(String.format("The queries file %s could not be found.",
+                            cmd.getOptionValue("q")));
+                    logStackTrace(e);
+                    System.exit(1);
+                }
             }
 
             String pmidCutOffs = null;
@@ -152,12 +198,29 @@ public class CLI
 
             if(speciesNames != null)
             {
-                speciesNames.close();
+                try
+                {
+                    speciesNames.close();
+                }
+                catch (IOException e)
+                {
+                    System.err.println(String.format("Error closing stream from file %s.\n", cmd.getOptionValue("sn")));
+                    logStackTrace(e);
+                    System.exit(1);
+                }
             }
 
             if(queriesStream != null)
             {
-                queriesStream.close();
+                try
+                {
+                    queriesStream.close();
+                }
+                catch (IOException e)
+                {
+                    System.err.println(String.format("Error closing stream from file %s.\n", cmd.getOptionValue("q")));
+                    logStackTrace(e);
+                    System.exit(1);                }
             }
 
             EntityFactory entityFactory = DefaultEntityFactory.getInstance();
@@ -172,13 +235,49 @@ public class CLI
             SBMLDocument doc = util.getDocument(recon);
 
             SBMLWriter writer = new SBMLWriter();
-            writer.write(doc, new BufferedOutputStream(new FileOutputStream(new File(cmd.getOptionValue("o")))));
+            try
+            {
+                writer.write(doc, new BufferedOutputStream(new FileOutputStream(new File(cmd.getOptionValue("o")))));
+            }
+            catch (XMLStreamException e)
+            {
+                System.err.println(String.format("Error writing to file %s.\n", cmd.getOptionValue("o")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+            catch (FileNotFoundException e)
+            {
+                System.err.println(String.format("Error writing to file %s.\n", cmd.getOptionValue("o")));
+                logStackTrace(e);
+                System.exit(1);
+            }
         }
         else if(cmd.getOptionValue("m").equals("relevance"))
         {
-            InputStream input = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("i"))));
-            SBMLReactionReader sbmlReader = new SBMLReactionReader(
-                    input, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
+            InputStream input = null;
+            try
+            {
+                input = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("i"))));
+            }
+            catch (FileNotFoundException e)
+            {
+                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("i")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            SBMLReactionReader sbmlReader = null;
+            try
+            {
+                sbmlReader = new SBMLReactionReader(
+                        input, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
+            }
+            catch (XMLStreamException e)
+            {
+                System.err.println("The input XML file could not be read.");
+                logStackTrace(e);
+                System.exit(1);
+            }
             Set<MetabolicReaction> reactions = new HashSet<MetabolicReaction>();
 
             while(sbmlReader.hasNext())
@@ -186,7 +285,17 @@ public class CLI
                 MetabolicReaction r = sbmlReader.next();
                 reactions.add(r);
             }
-            input.close();
+
+            try
+            {
+                input.close();
+            }
+            catch (IOException e)
+            {
+                System.err.println("The stream from the input file could not be closed.");
+                logStackTrace(e);
+                System.exit(1);
+            }
 
             CompoundAnnotator.calculateAlternativePathwayRelevance(reactions);
 
@@ -202,12 +311,38 @@ public class CLI
             SBMLDocument doc = util.getDocument(recon);
 
             SBMLWriter writer = new SBMLWriter();
-            writer.write(doc, new BufferedOutputStream(new FileOutputStream(new File(cmd.getOptionValue("o")))));
+            try
+            {
+                writer.write(doc, new BufferedOutputStream(new FileOutputStream(new File(cmd.getOptionValue("o")))));
+            }
+            catch (XMLStreamException e)
+            {
+                System.err.println(String.format("Error writing to file %s.\n", cmd.getOptionValue("o")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+            catch (FileNotFoundException e)
+            {
+                System.err.println(String.format("Error writing to file %s.\n", cmd.getOptionValue("o")));
+                logStackTrace(e);
+                System.exit(1);
+            }
         }
         else if(cmd.getOptionValue("m").equals("continuousTest"))
         {
             Map<String, Integer> pmidCutoffs = new HashMap<String, Integer>();
-            Scanner sc = new Scanner(new BufferedReader(new FileReader(new File(cmd.getOptionValue("ic")))));
+            Scanner sc = null;
+            try
+            {
+                sc = new Scanner(new BufferedReader(new FileReader(new File(cmd.getOptionValue("ic")))));
+            }
+            catch (FileNotFoundException e)
+            {
+                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("ic")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
             String line;
             while(sc.hasNextLine())
             {
@@ -228,9 +363,30 @@ public class CLI
                 }
             }
 
-            InputStream input = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("i"))));
-            SBMLReactionReader sbmlReader = new SBMLReactionReader(
-                    input, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
+            InputStream input = null;
+            try
+            {
+                input = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("i"))));
+            }
+            catch (FileNotFoundException e)
+            {
+                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("i")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            SBMLReactionReader sbmlReader = null;
+            try
+            {
+                sbmlReader = new SBMLReactionReader(
+                        input, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
+            }
+            catch (XMLStreamException e)
+            {
+                System.err.println(String.format("The file %s could not be read.", cmd.getOptionValue("i")));
+                logStackTrace(e);
+                System.exit(1);
+            }
             Set<MetabolicReaction> reactions = new HashSet<MetabolicReaction>();
 
             while(sbmlReader.hasNext())
@@ -238,11 +394,43 @@ public class CLI
                 MetabolicReaction r = sbmlReader.next();
                 reactions.add(r);
             }
-            sbmlReader.close();
 
-            InputStream seedInput = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("s"))));
-            SBMLReactionReader seedSBMLReader = new SBMLReactionReader(
-                    seedInput, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
+            try
+            {
+                sbmlReader.close();
+            }
+            catch (IOException e)
+            {
+                System.err.println(String.format("The stream from the %s file could not be closed.",
+                        cmd.getOptionValue("i")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            InputStream seedInput = null;
+            try
+            {
+                seedInput = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("s"))));
+            }
+            catch (FileNotFoundException e)
+            {
+                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("s")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            SBMLReactionReader seedSBMLReader = null;
+            try
+            {
+                seedSBMLReader = new SBMLReactionReader(
+                        seedInput, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
+            }
+            catch (XMLStreamException e)
+            {
+                System.err.println(String.format("The file %s could not be read.", cmd.getOptionValue("s")));
+                logStackTrace(e);
+                System.exit(1);
+            }
             Set<MetabolicReaction> seedReactions = new HashSet<MetabolicReaction>();
 
             while(seedSBMLReader.hasNext())
@@ -250,11 +438,43 @@ public class CLI
                 MetabolicReaction r = seedSBMLReader.next();
                 seedReactions.add(r);
             }
-            seedSBMLReader.close();
 
-            InputStream expectedInput = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("e"))));
-            SBMLReactionReader expectedSBMLReader = new SBMLReactionReader(
-                    expectedInput, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
+            try
+            {
+                seedSBMLReader.close();
+            }
+            catch (IOException e)
+            {
+                System.err.println(String.format("The stream from the %s file could not be closed.",
+                        cmd.getOptionValue("s")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            InputStream expectedInput = null;
+            try
+            {
+                expectedInput = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("e"))));
+            }
+            catch (FileNotFoundException e)
+            {
+                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("e")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            SBMLReactionReader expectedSBMLReader = null;
+            try
+            {
+                expectedSBMLReader = new SBMLReactionReader(
+                        expectedInput, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
+            }
+            catch (XMLStreamException e)
+            {
+                System.err.println(String.format("The file %s could not be read.", cmd.getOptionValue("e")));
+                logStackTrace(e);
+                System.exit(1);
+            }
             Set<MetabolicReaction> expectedReactions = new HashSet<MetabolicReaction>();
 
             while(expectedSBMLReader.hasNext())
@@ -262,16 +482,48 @@ public class CLI
                 MetabolicReaction r = expectedSBMLReader.next();
                 expectedReactions.add(r);
             }
-            expectedSBMLReader.close();
 
-            BKMDB bkmDB = new BKMDB();
+            try
+            {
+                expectedSBMLReader.close();
+            }
+            catch (IOException e)
+            {
+                System.err.println(String.format("The stream from the %s file could not be closed.",
+                        cmd.getOptionValue("e")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            BKMDB bkmDB = null;
+            try
+            {
+                bkmDB = new BKMDB();
+            }
+            catch (BKMException e)
+            {
+                System.err.println("Error reading internal BKM-React database.");
+                logStackTrace(e);
+                System.exit(1);
+            }
+
             Gson gson = new Gson();
             Type mapType = new TypeToken<Map<String, String>>(){}.getType();
             Map<String, String> currencyMoleculesMap = gson.fromJson(new InputStreamReader(
                     CLI.class.getResourceAsStream("/uk/ac/bbk/REx/settings/currencyMolecules.json")), mapType);
             Set<String> currencyMolecules = new HashSet<String>(currencyMoleculesMap.values());
 
-            Writer w = new BufferedWriter(new FileWriter(new File(cmd.getOptionValue("o"))));
+            Writer w = null;
+            try
+            {
+                w = new BufferedWriter(new FileWriter(new File(cmd.getOptionValue("o"))));
+            }
+            catch (IOException e)
+            {
+                System.err.println(String.format("Error writing to file %s.\n", cmd.getOptionValue("o")));
+                logStackTrace(e);
+                System.exit(1);
+            }
             for(int i=highest; i>0; i--)
             {
                 Set<MetabolicReaction> reactionsToRemove = new HashSet<MetabolicReaction>();
@@ -318,14 +570,42 @@ public class CLI
                     }
                 }
 
-                CompoundAnnotator.annotateReactions(reactions, seedReactions, bkmDB, currencyMolecules);
+                try
+                {
+                    CompoundAnnotator.annotateReactions(reactions, seedReactions, bkmDB, currencyMolecules);
+                }
+                catch (SQLException e)
+                {
+                    System.err.println("Error reading internal BKM-React database.");
+                    logStackTrace(e);
+                    System.exit(1);
+                }
                 CompoundAnnotator.calculateAlternativePathwayRelevance(reactions);
 
                 Results results = Evaluator.evaluateResults(reactions, expectedReactions, new HashSet<String>());
-                w.write(i + "," + results.getRecall() + "," + results.getPrecision() + "\n");
+                try
+                {
+                    w.write(i + "," + results.getRecall() + "," + results.getPrecision() + "\n");
+                }
+                catch (IOException e)
+                {
+                    System.err.println(String.format("Error writing to file %s.\n", cmd.getOptionValue("o")));
+                    logStackTrace(e);
+                    System.exit(1);
+                }
             }
 
-            w.close();
+            try
+            {
+                w.close();
+            }
+            catch (IOException e)
+            {
+                System.err.println(String.format("The stream to the %s file could not be closed.",
+                        cmd.getOptionValue("o")));
+                logStackTrace(e);
+                System.exit(1);
+            }
         }
     }
 
@@ -335,9 +615,18 @@ public class CLI
                                                     InputStream speciesNames,
                                                     InputStream queriesStream,
                                                     String pmidCutOffs)
-            throws CHEBIException, XMLStreamException, IOException, InvalidXMLException, ResourceInitializationException, CollectionException, AnalysisEngineProcessException, CASException, ClassNotFoundException, SQLException, InstantiationException, IllegalAccessException
     {
-        SeedPathway seed = new SeedPathway(seedReactions);
+        SeedPathway seed = null;
+        try
+        {
+            seed = new SeedPathway(seedReactions);
+        }
+        catch (CHEBIException e)
+        {
+            System.err.println("There was a problem reading the internal ChEBI database.");
+            logStackTrace(e);
+            System.exit(1);
+        }
         Set<String> queries;
 
         File originalSpeciesFile = new File("data/species-light-original.tsv");
@@ -360,7 +649,17 @@ public class CLI
             }
 
             StringBuilder originalSpeciesFileString = new StringBuilder();
-            Scanner sc2 = new Scanner(new BufferedInputStream(new FileInputStream(originalSpeciesFile)));
+            Scanner sc2 = null;
+            try
+            {
+                sc2 = new Scanner(new BufferedInputStream(new FileInputStream(originalSpeciesFile)));
+            }
+            catch (FileNotFoundException e)
+            {
+                System.err.println("The file species-light-original.tsv in the data directory could not be found.");
+                logStackTrace(e);
+                System.exit(1);
+            }
             while(sc2.hasNextLine())
             {
                 originalSpeciesFileString.append(sc2.nextLine()).append("\n");
@@ -370,13 +669,31 @@ public class CLI
             String speciesFileString = originalSpeciesFileString.toString().replaceAll(
                     "species:ncbi:" + speciesID + "\t", "species:ncbi:" + speciesID + "\t" + newOrganismNames);
 
-            Writer w = new BufferedWriter(new FileWriter(speciesFile));
-            w.write(speciesFileString);
-            w.close();
+            try
+            {
+                Writer w = new BufferedWriter(new FileWriter(speciesFile));
+                w.write(speciesFileString);
+                w.close();
+            }
+            catch (IOException e)
+            {
+                System.err.println("The file species-light.tsv could not be written to the data directory.");
+                logStackTrace(e);
+                System.exit(1);
+            }
         }
         else
         {
-            Files.copy(originalSpeciesFile, speciesFile);
+            try
+            {
+                Files.copy(originalSpeciesFile, speciesFile);
+            }
+            catch (IOException e)
+            {
+                System.err.println("The file species-light-original.tsv in the data directory could not be copied.");
+                logStackTrace(e);
+                System.exit(1);
+            }
         }
 
         if(queriesStream != null)
@@ -390,7 +707,26 @@ public class CLI
         }
         else
         {
-            queries = seed.constructQueries(speciesID);
+            try
+            {
+                queries = seed.constructQueries(speciesID);
+            }
+            catch (CHEBIException e)
+            {
+                System.err.println("The internal ChEBI database could not be read.");
+                logStackTrace(e);
+                System.exit(1);
+                //Return so that the compiler knows that queries must have been initialised. It does not know
+                //that a System.exit() ends the program.
+                return null;
+            }
+            catch (FileNotFoundException e)
+            {
+                System.err.println("The file species-light.tsv in the data directory could not be read.");
+                logStackTrace(e);
+                System.exit(1);
+                return null;
+            }
         }
 
         Gson gson = new Gson();
@@ -399,7 +735,17 @@ public class CLI
         //Initialise the PubMed reader
         XMLInputSource reader = new XMLInputSource(
                 CLI.class.getResourceAsStream("/uk/ac/bbk/REx/desc/MultiplePubMedReader.xml"), null);
-        CollectionReaderDescription crDesc = UIMAFramework.getXMLParser().parseCollectionReaderDescription(reader);
+        CollectionReaderDescription crDesc = null;
+        try
+        {
+            crDesc = UIMAFramework.getXMLParser().parseCollectionReaderDescription(reader);
+        }
+        catch (InvalidXMLException e)
+        {
+            System.err.println("There was an error reading internal configuration files.");
+            logStackTrace(e);
+            System.exit(1);
+        }
 
         ConfigurationParameterSettings crParams = crDesc.getMetaData().getConfigurationParameterSettings();
         crParams.setParameterValue("queries", queriesJSON);
@@ -430,7 +776,17 @@ public class CLI
         //Initialise the analysis engine.
         XMLInputSource in = new XMLInputSource(
                 CLI.class.getResourceAsStream("/uk/ac/bbk/REx/desc/RExAnnotator.xml"), null);
-        AnalysisEngineDescription aeDesc = UIMAFramework.getXMLParser().parseAnalysisEngineDescription(in);
+        AnalysisEngineDescription aeDesc = null;
+        try
+        {
+            aeDesc = UIMAFramework.getXMLParser().parseAnalysisEngineDescription(in);
+        }
+        catch (InvalidXMLException e)
+        {
+            System.err.println("There was an error reading internal configuration files.");
+            logStackTrace(e);
+            System.exit(1);
+        }
         ConfigurationParameterSettings aeParams = aeDesc.getMetaData().getConfigurationParameterSettings();
         aeParams.setParameterValue("organism", speciesID);
 
@@ -444,7 +800,17 @@ public class CLI
         });
         System.setOut(dummyStream);
 
-        AnalysisEngine ae = UIMAFramework.produceAnalysisEngine(aeDesc);
+        AnalysisEngine ae = null;
+        try
+        {
+            ae = UIMAFramework.produceAnalysisEngine(aeDesc);
+        }
+        catch (ResourceInitializationException e)
+        {
+            System.err.println("Error initialising analysis engine.");
+            logStackTrace(e);
+            System.exit(1);
+        }
 
         System.setOut(originalStream);
 
@@ -461,36 +827,81 @@ public class CLI
         List<JCas> cases = new ArrayList<JCas>();
 
         //Loop through each CAS in the reader.
-        while(cr.hasNext())
+        try
         {
-            //create a CAS, given an Analysis Engine (ae)
-            CAS cas = ae.newCAS();
+            while(cr.hasNext())
+            {
+                //create a CAS, given an Analysis Engine (ae)
+                CAS cas = null;
+                try
+                {
+                    cas = ae.newCAS();
+                }
+                catch (ResourceInitializationException e)
+                {
+                    System.err.println("Error annotating document.");
+                    logStackTrace(e);
+                    System.exit(1);
+                }
 
-            try
-            {
-                cr.getNext(cas);
-            }
-            catch(SocketTimeoutException e)
-            {
-                continue;
-            }
-            catch(ConnectException e)
-            {
-                continue;
-            }
+                try
+                {
+                    cr.getNext(cas);
+                }
+                catch(SocketTimeoutException e)
+                {
+                    continue;
+                }
+                catch(ConnectException e)
+                {
+                    continue;
+                }
 
-            ae.process(cas);
-            cases.add(cas.getJCas());
+                try
+                {
+                    ae.process(cas);
+                }
+                catch (AnalysisEngineProcessException e)
+                {
+                    System.err.println("Error annotating document.");
+                    logStackTrace(e);
+                    System.exit(1);
+                }
 
-            double progress = ((double)cr.getProgress()[0].getCompleted() / (double)cr.getProgress()[0].getTotal()) * 100;
-            if(cr.hasNext())
-            {
-                System.out.print("Progress: " + (int)Math.floor(progress) + "%\r");
+
+                try
+                {
+                    cases.add(cas.getJCas());
+                }
+                catch (CASException e)
+                {
+                    System.err.println("Error annotating document.");
+                    logStackTrace(e);
+                    System.exit(1);
+                }
+
+                double progress = ((double)cr.getProgress()[0].getCompleted() / (double)cr.getProgress()[0].getTotal()) * 100;
+                if(cr.hasNext())
+                {
+                    System.out.print("Progress: " + (int)Math.floor(progress) + "%\r");
+                }
+                else
+                {
+                    System.out.println("Progress: 100%");
+                }
             }
-            else
-            {
-                System.out.println("Progress: 100%");
-            }
+        }
+        catch(IOException e)
+        {
+            System.err.println("Error retrieving document from PubMed.");
+            logStackTrace(e);
+            System.exit(1);
+        }
+        catch(CollectionException e)
+        {
+            System.err.println("Error retrieving document from PubMed.");
+            logStackTrace(e);
+            System.exit(1);
         }
 
         cr.destroy();
@@ -500,8 +911,36 @@ public class CLI
 
         List<MetabolicReaction> combinedReactions = ReactionCombiner.combineReactions(
                 mdkReactions, new HashSet<String>(), entityFactory);
-        BKMDB bkmDB = new BKMDB();
-        CompoundAnnotator.annotateReactions(combinedReactions, seedReactions, bkmDB, currencyMolecules);
+        BKMDB bkmDB = null;
+        try
+        {
+            bkmDB = new BKMDB();
+        }
+        catch (BKMException e)
+        {
+            System.err.println("Error reading internal BKM-React database.");
+            logStackTrace(e);
+            System.exit(1);
+        }
+
+        try
+        {
+            CompoundAnnotator.annotateReactions(combinedReactions, seedReactions, bkmDB, currencyMolecules);
+        }
+        catch (SQLException e)
+        {
+            System.err.println("Error reading internal BKM-React database.");
+            logStackTrace(e);
+            System.exit(1);
+        }
         return combinedReactions;
+    }
+
+    private static void logStackTrace(Throwable e)
+    {
+        Logger LOGGER = Logger.getLogger("uk.ac.bbk.REx.program.CLI");
+        StringWriter sw = new StringWriter();
+        e.printStackTrace(new PrintWriter(sw));
+        LOGGER.log(Level.INFO, sw.toString());
     }
 }
