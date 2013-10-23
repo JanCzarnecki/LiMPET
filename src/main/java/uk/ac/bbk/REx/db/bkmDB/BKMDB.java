@@ -1,6 +1,7 @@
 package uk.ac.bbk.REx.db.bkmDB;
 
 import org.apache.commons.io.IOUtils;
+import uk.ac.bbk.REx.exception.BKMException;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -26,17 +27,35 @@ public class BKMDB
 	
 	Pattern romanNumeralPatt;
 	
-	public BKMDB() throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException, IOException
+	public BKMDB() throws BKMException
     {
-		con = DriverManager.getConnection("jdbc:derby:data/db/bkm;");
-		
-		reactionsInPathwayStmt = prepareStatementFromResources("reactionsInPathwayStmt.sql");
-		reactionsContainingSubstrateStmt = prepareStatementFromResources("reactionsContainingSubstrateStmt.sql");
-		reactionsContainingProductStmt = prepareStatementFromResources("reactionsContainingProductStmt.sql");
-		pathwayNameStmt = prepareStatementFromResources("pathwayNameStmt.sql");
-		pathwayIDsContainingReactionStmt = prepareStatementFromResources("pathwayIDsContainingReactionStmt.sql");
-        pathwayNamesContainingReactionStmt = prepareStatementFromResources("pathwayNamesContainingReactionStmt.sql");
-		
+        try
+        {
+            con = DriverManager.getConnection("jdbc:derby:data/db/bkm;");
+        }
+        catch (SQLException e)
+        {
+            throw new BKMException(e);
+        }
+
+        try
+        {
+            reactionsInPathwayStmt = prepareStatementFromResources("reactionsInPathwayStmt.sql");
+            reactionsContainingSubstrateStmt = prepareStatementFromResources("reactionsContainingSubstrateStmt.sql");
+            reactionsContainingProductStmt = prepareStatementFromResources("reactionsContainingProductStmt.sql");
+            pathwayNameStmt = prepareStatementFromResources("pathwayNameStmt.sql");
+            pathwayIDsContainingReactionStmt = prepareStatementFromResources("pathwayIDsContainingReactionStmt.sql");
+            pathwayNamesContainingReactionStmt = prepareStatementFromResources("pathwayNamesContainingReactionStmt.sql");
+        }
+        catch (IOException e)
+        {
+            throw new BKMException(e);
+        }
+        catch (SQLException e)
+        {
+            throw new BKMException(e);
+        }
+
 		romanNumeralPatt = Pattern.compile("\\b[IVX]+\\b");
 	}
 

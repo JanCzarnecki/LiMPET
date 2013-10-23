@@ -3,6 +3,7 @@ package uk.ac.bbk.REx.db;
 import org.junit.Before;
 import org.junit.Test;
 import uk.ac.bbk.REx.db.bkmDB.BKMDB;
+import uk.ac.bbk.REx.exception.BKMException;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -15,7 +16,7 @@ public class BKMDBTest
     BKMDB bkmDB;
 
     @Before
-    public void initialise() throws ClassNotFoundException, SQLException, InstantiationException, IllegalAccessException, IOException
+    public void initialise() throws BKMException
     {
         bkmDB = new BKMDB();
     }
