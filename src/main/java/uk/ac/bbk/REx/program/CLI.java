@@ -412,7 +412,10 @@ public class CLI
         catch(ResourceInitializationException e)
         {
             System.out.println("There seems to be a problem connecting to PubMed. Try running the program again.");
-            Logger.getLogger("uk.ac.bbk.REx.program.CLI").log(Level.INFO, e.toString());
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            Logger.getLogger("uk.ac.bbk.REx.program.CLI").log(Level.INFO, sw.toString());
             System.exit(1);
         }
 
