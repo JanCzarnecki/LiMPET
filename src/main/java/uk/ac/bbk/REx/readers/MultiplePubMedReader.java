@@ -211,7 +211,7 @@ public class MultiplePubMedReader extends CollectionReader_ImplBase
 			Article pmArticle;
 			try
 			{
-				pmArticle = new Article(pmid, getUimaContext().getLogger());
+				pmArticle = new Article(pmid);
 			} 
 			catch (XPathExpressionException e)
 			{

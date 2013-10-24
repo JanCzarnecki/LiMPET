@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -20,10 +22,7 @@ import javax.xml.xpath.XPathFactory;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.util.PDFTextStripper;
-import org.apache.uima.util.Level;
-import org.apache.uima.util.Logger;
 import org.jsoup.Jsoup;
-import org.jsoup.helper.Validate;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.w3c.dom.Document;
@@ -32,7 +31,7 @@ import org.xml.sax.SAXException;
 
 /**
  * Article represents a page linked to by PubMed. The class provides methods to retrieve the title,
- * abstract and, if possible, the introduction.
+ * abstract and, if possible, the full text.
  */
 public class Article
 {
@@ -44,16 +43,16 @@ public class Article
 	private String title;
 	private String articleAbstract;
 	private String content;
-	private Logger logger;
+	private Logger LOGGER;
 	
 	
 	//Private zero argument constructor to allow deserialization from JSON using GSON.
 	@SuppressWarnings("unused")
 	private Article(){}
 	
-	public Article(String aPMID, Logger aLogger) throws ParserConfigurationException, XPathExpressionException, SAXException, IOException, TransformerException
+	public Article(String aPMID) throws ParserConfigurationException, XPathExpressionException, SAXException, IOException, TransformerException
 	{
-		logger = aLogger;
+        LOGGER = Logger.getLogger(this.getClass().getName());
 		builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 		pmid = aPMID;
 		fetchData();
@@ -157,7 +156,7 @@ public class Article
 	private void fetchWebPage() throws IOException, SAXException
 	{
 		url = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=" + pmid + "&retmode=ref&cmd=prlinks";
-		logger.log(Level.INFO, "Fetching " + url);
+		LOGGER.log(Level.INFO, "Fetching " + url);
 		webPage = Jsoup.connect(url).timeout(20000).get();
 		
 		if(webPage.baseUri().substring(0, 19).equals("http://pubs.acs.org"))
@@ -189,7 +188,7 @@ public class Article
 					}
 					catch(IllegalArgumentException e)
 					{
-						logger.log(Level.INFO, "Non-valid URL: " + link.attr("abs:href"));
+						LOGGER.log(Level.INFO, "Non-valid URL: " + link.attr("abs:href"));
 						continue;
 					}
 					//Check if the linked page is big enough
