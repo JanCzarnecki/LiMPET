@@ -21,6 +21,7 @@ import org.apache.uima.util.XMLInputSource;
 import org.sbml.jsbml.SBMLDocument;
 import org.sbml.jsbml.SBMLWriter;
 import uk.ac.bbk.REx.db.bkmDB.BKMDB;
+import uk.ac.bbk.REx.db.documentDB.DocumentDB;
 import uk.ac.bbk.REx.exception.BKMException;
 import uk.ac.bbk.REx.exception.CHEBIException;
 import uk.ac.bbk.REx.internalTypes.SeedPathway;
@@ -603,6 +604,38 @@ public class CLI
             {
                 System.err.println(String.format("The stream to the %s file could not be closed.",
                         cmd.getOptionValue("o")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+        }
+        else if(cmd.getOptionValue("m").equals("clearCache"))
+        {
+            try
+            {
+                DocumentDB docDB = new DocumentDB();
+                docDB.clearDatabase();
+            }
+            catch (InstantiationException e)
+            {
+                System.err.println("Unable to read document database.");
+                logStackTrace(e);
+                System.exit(1);
+            }
+            catch (IllegalAccessException e)
+            {
+                System.err.println("Unable to read document database.");
+                logStackTrace(e);
+                System.exit(1);
+            }
+            catch (ClassNotFoundException e)
+            {
+                System.err.println("Unable to read document database.");
+                logStackTrace(e);
+                System.exit(1);
+            }
+            catch (SQLException e)
+            {
+                System.err.println("Unable to read document database.");
                 logStackTrace(e);
                 System.exit(1);
             }
