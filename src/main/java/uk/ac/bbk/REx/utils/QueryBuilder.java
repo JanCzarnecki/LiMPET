@@ -62,7 +62,7 @@ public class QueryBuilder
                     organismQuery.append(" OR ");
                 }
 
-                organismQuery.append("(\"" + organismName + "\")");
+                organismQuery.append("(" + organismName + ")");
             }
             else
             {
