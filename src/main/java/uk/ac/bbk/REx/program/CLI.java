@@ -941,7 +941,8 @@ public class CLI
                 System.exit(1);
             }
 
-            double progress = ((double)cr.getProgress()[0].getCompleted() / (double)cr.getProgress()[0].getTotal()) * 100;
+            double progress =
+                    ((double)cr.getProgress()[0].getCompleted() / (double)cr.getProgress()[0].getTotal()) * 100;
             try
             {
                 hasNext = cr.hasNext();
