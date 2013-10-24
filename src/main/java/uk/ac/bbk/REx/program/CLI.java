@@ -859,82 +859,114 @@ public class CLI
         Set<String> currencyMolecules = new HashSet<String>(currencyMoleculesMap.values());
         List<JCas> cases = new ArrayList<JCas>();
 
-        //Loop through each CAS in the reader.
+        boolean hasNext = false;
         try
         {
-            while(cr.hasNext())
+            hasNext = cr.hasNext();
+        }
+        catch (IOException e)
+        {
+            System.err.println("Error retrieving PubMed documents.");
+            logStackTrace(e);
+            System.exit(1);
+        }
+        catch (CollectionException e)
+        {
+            System.err.println("Error retrieving PubMed documents.");
+            logStackTrace(e);
+            System.exit(1);
+        }
+
+        //Loop through each CAS in the reader.
+        while(hasNext)
+        {
+            //create a CAS, given an Analysis Engine (ae)
+            CAS cas = null;
+            try
             {
-                //create a CAS, given an Analysis Engine (ae)
-                CAS cas = null;
-                try
-                {
-                    cas = ae.newCAS();
-                }
-                catch (ResourceInitializationException e)
-                {
-                    System.err.println("Error annotating document.");
-                    logStackTrace(e);
-                    System.exit(1);
-                }
-
-                try
-                {
-                    cr.getNext(cas);
-                }
-                catch(SocketTimeoutException e)
-                {
-                    continue;
-                }
-                catch(ConnectException e)
-                {
-                    continue;
-                }
-
-                try
-                {
-                    ae.process(cas);
-                }
-                catch (AnalysisEngineProcessException e)
-                {
-                    System.err.println("Error annotating document.");
-                    logStackTrace(e);
-                    System.exit(1);
-                }
-
-
-                try
-                {
-                    cases.add(cas.getJCas());
-                }
-                catch (CASException e)
-                {
-                    System.err.println("Error annotating document.");
-                    logStackTrace(e);
-                    System.exit(1);
-                }
-
-                double progress = ((double)cr.getProgress()[0].getCompleted() / (double)cr.getProgress()[0].getTotal()) * 100;
-                if(cr.hasNext())
-                {
-                    System.out.print("Progress: " + (int)Math.floor(progress) + "%\r");
-                }
-                else
-                {
-                    System.out.println("Progress: 100%");
-                }
+                cas = ae.newCAS();
             }
-        }
-        catch(IOException e)
-        {
-            System.err.println("Error retrieving document from PubMed.");
-            logStackTrace(e);
-            System.exit(1);
-        }
-        catch(CollectionException e)
-        {
-            System.err.println("Error retrieving document from PubMed.");
-            logStackTrace(e);
-            System.exit(1);
+            catch (ResourceInitializationException e)
+            {
+                System.err.println("Error annotating document.");
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            try
+            {
+                cr.getNext(cas);
+            }
+            catch(SocketTimeoutException e)
+            {
+                logStackTrace(e);
+                continue;
+            }
+            catch(ConnectException e)
+            {
+                logStackTrace(e);
+                continue;
+            }
+            catch (CollectionException e)
+            {
+                logStackTrace(e);
+                continue;
+            }
+            catch (IOException e)
+            {
+                logStackTrace(e);
+                continue;
+            }
+
+            try
+            {
+                ae.process(cas);
+            }
+            catch (AnalysisEngineProcessException e)
+            {
+                System.err.println("Error annotating document.");
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+
+            try
+            {
+                cases.add(cas.getJCas());
+            }
+            catch (CASException e)
+            {
+                System.err.println("Error annotating document.");
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            double progress = ((double)cr.getProgress()[0].getCompleted() / (double)cr.getProgress()[0].getTotal()) * 100;
+            try
+            {
+                hasNext = cr.hasNext();
+            }
+            catch (IOException e)
+            {
+                System.err.println("Error retrieving PubMed documents.");
+                logStackTrace(e);
+                System.exit(1);
+            }
+            catch (CollectionException e)
+            {
+                System.err.println("Error retrieving PubMed documents.");
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            if(hasNext)
+            {
+                System.out.print("Progress: " + (int)Math.floor(progress) + "%\r");
+            }
+            else
+            {
+                System.out.println("Progress: 100%");
+            }
         }
 
         cr.destroy();
