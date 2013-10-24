@@ -135,7 +135,8 @@ public class CompoundAnnotator
                     substrateInchiString = inchi.toInChI();
                 }
 
-                if(startTerminus || seedProductIndex.containsKey(substrateInchiString))
+                if((startTerminus || seedProductIndex.containsKey(substrateInchiString))
+                        && !currencyMols.contains(substrateInchiString))
                 {
                     for(MetabolicParticipant product : seedReaction.getProducts())
                     {
@@ -147,7 +148,8 @@ public class CompoundAnnotator
                             productInchiString = inchi.toInChI();
                         }
 
-                        if(endTerminus || seedSubstrateIndex.containsKey(productInchiString))
+                        if((endTerminus || seedSubstrateIndex.containsKey(productInchiString))
+                                && !currencyMols.contains(productInchiString))
                         {
                             seedReactionsFound.addAll(
                                     bkmDB.getReactionsContainingSubstrateAndProduct(
@@ -426,36 +428,39 @@ public class CompoundAnnotator
                     }
 
                     //Alternative & Other
-                    List<Integer> reactionsFound = bkmDB.getReactionsContainingSubstrateAndProduct(substrateID, productID);
-                    Set<String> pathwaysFound = new HashSet<String>();
-                    for(int reactionFound : reactionsFound)
+                    if(!currencyMols.contains(substrateID) && !currencyMols.contains(productID))
                     {
-                        pathwaysFound.addAll(bkmDB.getPathwaysContainingReaction(reactionFound));
-                    }
-
-                    for(String pathwayFound : pathwaysFound)
-                    {
-                        boolean alternative = false;
-                        String pathwayFoundName = bkmDB.getPathwayName(pathwayFound);
-                        for(String seedPathwayFound : seedPathwaysFound)
+                        List<Integer> reactionsFound = bkmDB.getReactionsContainingSubstrateAndProduct(substrateID, productID);
+                        Set<String> pathwaysFound = new HashSet<String>();
+                        for(int reactionFound : reactionsFound)
                         {
-                            String seedPathwayFoundName = bkmDB.getPathwayName(seedPathwayFound);
-                            if(bkmDB.arePathwayNamesAlternatives(pathwayFoundName, seedPathwayFoundName))
+                            pathwaysFound.addAll(bkmDB.getPathwaysContainingReaction(reactionFound));
+                        }
+
+                        for(String pathwayFound : pathwaysFound)
+                        {
+                            boolean alternative = false;
+                            String pathwayFoundName = bkmDB.getPathwayName(pathwayFound);
+                            for(String seedPathwayFound : seedPathwaysFound)
                             {
-                                alternative = true;
-                                break;
+                                String seedPathwayFoundName = bkmDB.getPathwayName(seedPathwayFound);
+                                if(bkmDB.arePathwayNamesAlternatives(pathwayFoundName, seedPathwayFoundName))
+                                {
+                                    alternative = true;
+                                    break;
+                                }
                             }
-                        }
 
-                        if(alternative)
-                        {
-                            substrateAlternativePathways.add(pathwayFound);
-                            productAlternativePathways.add(pathwayFound);
-                        }
-                        else
-                        {
-                            substrateOtherPathways.add(pathwayFound);
-                            productOtherPathways.add(pathwayFound);
+                            if(alternative)
+                            {
+                                substrateAlternativePathways.add(pathwayFound);
+                                productAlternativePathways.add(pathwayFound);
+                            }
+                            else
+                            {
+                                substrateOtherPathways.add(pathwayFound);
+                                productOtherPathways.add(pathwayFound);
+                            }
                         }
                     }
                 }
