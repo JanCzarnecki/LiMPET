@@ -141,6 +141,8 @@ public class Evaluator
         int foundReactions = 0;
         List<MetabolicReaction> expectedReactionsFound = new ArrayList<MetabolicReaction>();
         List<MetabolicReaction> foundReactionsExpected = new ArrayList<MetabolicReaction>();
+
+        START:
         for(MetabolicReaction expectedReaction : expectedReactions)
         {
             //Determine if this is a terminal reaction
@@ -189,7 +191,6 @@ public class Evaluator
 
             if(startTerminus && endTerminus)
             {
-                START:
                 for(MetabolicParticipant substrate : expectedReaction.getReactants())
                 {
                     Metabolite sm = substrate.getMolecule();
@@ -258,7 +259,7 @@ public class Evaluator
                         foundReactions++;
                         foundReactionsExpected.addAll(commonReactions);
                         expectedReactionsFound.add(expectedReaction);
-                        break;
+                        break START;
                     }
                 }
             }
@@ -297,7 +298,7 @@ public class Evaluator
                         foundReactions++;
                         foundReactionsExpected.addAll(commonReactions);
                         expectedReactionsFound.add(expectedReaction);
-                        break;
+                        break START;
                     }
                 }
             }
@@ -349,6 +350,7 @@ public class Evaluator
                     foundReactions++;
                     foundReactionsExpected.addAll(commonReactions);
                     expectedReactionsFound.add(expectedReaction);
+                    break START;
                 }
             }
         }
