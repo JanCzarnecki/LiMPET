@@ -2,12 +2,7 @@ package uk.ac.bbk.REx.utils;
 
 import hu.u_szeged.rgai.bio.uima.tagger.LinnaeusSpecies;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import opennlp.uima.Sentence;
 import opennlp.uima.Token;
@@ -22,6 +17,8 @@ import uk.ac.bbk.REx.types.Chemical;
 import uk.ac.bbk.REx.types.Document;
 import uk.ac.bbk.REx.types.Gene;
 import uk.ac.bbk.REx.types.ReactionKeyword;
+import uk.ac.ebi.mdk.domain.annotation.InChI;
+import uk.ac.ebi.mdk.domain.entity.Metabolite;
 
 public class JCasUtils
 {
@@ -235,4 +232,34 @@ public class JCasUtils
 		
 		return pmid;
 	}
+
+    public static List<Metabolite> metabolitesInCAS(Collection<Metabolite> metabolites, JCas jcas)
+    {
+        Map<String, Metabolite> inchis = new HashMap<String, Metabolite>();
+        for(Metabolite m : metabolites)
+        {
+            for(InChI inchi : m.getAnnotations(InChI.class))
+            {
+                inchis.put(inchi.toInChI(), m);
+            }
+        }
+
+        Set<Metabolite> metabolitesFound = new HashSet<Metabolite>();
+
+        for(Annotation chemicalAnnotation : jcas.getAnnotationIndex(Chemical.type))
+        {
+            Chemical chemical = (Chemical)chemicalAnnotation;
+
+            if(chemical.getInChiString() != null)
+            {
+                String inchi = chemical.getInChiString();
+                if(inchis.containsKey(inchi))
+                {
+                    metabolitesFound.add(inchis.get(inchi));
+                }
+            }
+        }
+
+        return new ArrayList<Metabolite>(metabolitesFound);
+    }
 }
