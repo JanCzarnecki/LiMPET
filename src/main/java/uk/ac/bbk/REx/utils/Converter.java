@@ -34,7 +34,8 @@ public class Converter
      * @return
      */
     public static List<BiochemicalReaction> convertUIMAReactionsToMDK(
-            Collection<JCas> cases, Collection<String> sectionsToIgnore, String speciesID)
+            Collection<JCas> cases, Collection<String> sectionsToIgnore, String speciesID,
+            Collection<Metabolite> seedMetabolites)
     {
         EntityFactory entityFactory = DefaultEntityFactory.getInstance();
         List<BiochemicalReaction> output = new ArrayList<BiochemicalReaction>();
@@ -48,6 +49,9 @@ public class Converter
                 Document doc = (Document)docAnnotation;
                 pmid = doc.getId();
             }
+
+            //Find seed metabolites in document.
+            List<Metabolite> seedMetabolitesFound = JCasUtils.metabolitesInCAS(seedMetabolites, cas);
 
             CharacterIndex<Section> sectionIndex = new CharacterIndex<Section>(cas, Section.type);
 
@@ -108,8 +112,8 @@ public class Converter
                     mdkReaction.addProduct(product);
                 }
 
-                RExExtract extract = new RExExtract(
-                        new PubMedIdentifier(pmid), uimaReaction.getCoveredText(), metaboliteTags, correctSpecies);
+                RExExtract extract = new RExExtract(new PubMedIdentifier(pmid), uimaReaction.getCoveredText(),
+                        metaboliteTags, correctSpecies, seedMetabolitesFound.size());
                 mdkReaction.addAnnotation(extract);
                 output.add(mdkReaction);
             }
