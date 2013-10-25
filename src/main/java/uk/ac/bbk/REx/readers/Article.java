@@ -43,7 +43,7 @@ public class Article
 	private String title;
 	private String articleAbstract;
 	private String content;
-	private Logger LOGGER;
+	private transient Logger LOGGER;
 	
 	
 	//Private zero argument constructor to allow deserialization from JSON using GSON.
@@ -60,6 +60,7 @@ public class Article
 		try
 		{
 			fetchWebPage();
+            fetchPDFLink();
 			fetchContent();
 		}
 		catch(IOException e)
