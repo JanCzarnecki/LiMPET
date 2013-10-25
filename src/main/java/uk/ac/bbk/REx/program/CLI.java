@@ -972,7 +972,8 @@ public class CLI
 
         cr.destroy();
 
-        List<BiochemicalReaction> mdkReactions = Converter.convertUIMAReactionsToMDK(cases, sections, speciesID);
+        List<BiochemicalReaction> mdkReactions = Converter.convertUIMAReactionsToMDK(cases, sections, speciesID,
+                seed.getMetabolites(currencyMolecules));
         EntityFactory entityFactory = DefaultEntityFactory.getInstance();
 
         List<MetabolicReaction> combinedReactions = ReactionCombiner.combineReactions(

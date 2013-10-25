@@ -94,6 +94,34 @@ public class SeedPathway
 	{
 		return chemicalNames;
 	}
+
+    public List<Metabolite> getMetabolites(Set<String> currencyMolecules)
+    {
+        Set<Metabolite> metabolitesSet = new HashSet<Metabolite>();
+
+        for(MetabolicReaction reaction : reactions)
+        {
+            for(MetabolicParticipant participant : reaction.getParticipants())
+            {
+                Metabolite metabolite = participant.getMolecule();
+                boolean isCurrencyMolecule = false;
+                for(InChI inchi : metabolite.getAnnotations(InChI.class))
+                {
+                    if(currencyMolecules.contains(inchi.toInChI()))
+                    {
+                        isCurrencyMolecule = true;
+                    }
+                }
+
+                if(!isCurrencyMolecule)
+                {
+                    metabolitesSet.add(metabolite);
+                }
+            }
+        }
+
+        return new ArrayList<Metabolite>(metabolitesSet);
+    }
 	
 	public Set<String> constructQueries(String organismID) throws CHEBIException, FileNotFoundException
     {

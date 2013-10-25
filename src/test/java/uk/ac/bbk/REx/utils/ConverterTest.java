@@ -7,6 +7,7 @@ import org.apache.uima.util.InvalidXMLException;
 import org.junit.Test;
 import uk.ac.bbk.REx.test.TestCASGenerator;
 import uk.ac.ebi.mdk.domain.annotation.rex.RExExtract;
+import uk.ac.ebi.mdk.domain.entity.Metabolite;
 import uk.ac.ebi.mdk.domain.entity.reaction.BiochemicalReaction;
 import uk.ac.ebi.mdk.domain.entity.reaction.MetabolicParticipant;
 import uk.ac.ebi.mdk.domain.entity.reaction.MetabolicReaction;
@@ -38,14 +39,15 @@ public class ConverterTest
     }
 
     @Test
-    public void convertUIMAReactionsToMDKTest() throws CASException, ResourceInitializationException, InvalidXMLException, IOException
+    public void convertUIMAReactionsToMDKTest() throws
+            CASException, ResourceInitializationException, InvalidXMLException, IOException
     {
         JCas jcas = TestCASGenerator.generateTestJCas();
         List<JCas> cases = new ArrayList<JCas>();
         cases.add(jcas);
 
         List<BiochemicalReaction> reactions = Converter.convertUIMAReactionsToMDK(
-                cases, new ArrayList<String>(), "562");
+                cases, new ArrayList<String>(), "562", new ArrayList<Metabolite>());
         List<String> results = new ArrayList<String>();
 
         MetabolicReaction reaction = reactions.get(0);
