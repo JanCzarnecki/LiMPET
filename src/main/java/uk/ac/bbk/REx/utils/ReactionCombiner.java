@@ -21,7 +21,10 @@ public class ReactionCombiner
      * @param entityFactory
      * @return
      */
-    public static List<MetabolicReaction> combineReactions(Collection<? extends MetabolicReaction> singleReactions, Collection<String> currencyMols, EntityFactory entityFactory)
+    public static List<MetabolicReaction> combineReactions(
+            Collection<? extends MetabolicReaction> singleReactions,
+            Collection<String> currencyMols,
+            EntityFactory entityFactory)
     {
         //Create chemical indexes
         Map<String, Set<MetabolicReaction>> substrateIndex = new HashMap<String, Set<MetabolicReaction>>();
