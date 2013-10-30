@@ -15,18 +15,22 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class SeedPathway
+public class Pathway
 {
 	List<MetabolicReaction> reactions;
 	Set<String> chemicalNames;
+    Map<String, Set<MetabolicReaction>> substrateIndex;
+    Map<String, Set<MetabolicReaction>> productIndex;
 	Map<String, Set<MetabolicReaction>> substrateInchiIndex;
 	Map<String, Set<MetabolicReaction>> productInchiIndex;
     Set<String> inchis;
 
-	public SeedPathway(List<MetabolicReaction> someReactions) throws CHEBIException
+	public Pathway(Collection<MetabolicReaction> someReactions)
 	{
-		reactions = someReactions;
+		reactions = new ArrayList<MetabolicReaction>(someReactions);
 		chemicalNames = new HashSet<String>();
+        substrateIndex = new HashMap<String, Set<MetabolicReaction>>();
+        productIndex = new HashMap<String, Set<MetabolicReaction>>();
 		substrateInchiIndex = new HashMap<String, Set<MetabolicReaction>>();
 		productInchiIndex = new HashMap<String, Set<MetabolicReaction>>();
         inchis = new HashSet<String>();
@@ -53,6 +57,12 @@ public class SeedPathway
                     }
                 }
 
+                if(!substrateIndex.containsKey(metabolite.getIdentifier()))
+                {
+                    substrateIndex.put(inchi, new HashSet<MetabolicReaction>());
+                }
+                substrateIndex.get(metabolite.getIdentifier()).add(r);
+
                 if(!substrateInchiIndex.containsKey(inchi))
                 {
                     substrateInchiIndex.put(inchi, new HashSet<MetabolicReaction>());
@@ -75,6 +85,12 @@ public class SeedPathway
                     }
                 }
 
+                if(!productIndex.containsKey(metabolite.getIdentifier()))
+                {
+                    productIndex.put(inchi, new HashSet<MetabolicReaction>());
+                }
+                productIndex.get(metabolite.getIdentifier()).add(r);
+
                 if(!productInchiIndex.containsKey(inchi))
                 {
                     productInchiIndex.put(inchi, new HashSet<MetabolicReaction>());
@@ -94,6 +110,19 @@ public class SeedPathway
 	{
 		return chemicalNames;
 	}
+
+    public boolean containsMolecule(String inchi)
+    {
+        return inchis.contains(inchi);
+    }
+
+    public Set<MetabolicReaction> getReactionsContainingMolecule(String molID)
+    {
+        Set<MetabolicReaction> output = new HashSet<MetabolicReaction>();
+        output.addAll(substrateIndex.get(molID));
+        output.addAll(productIndex.get(molID));
+        return output;
+    }
 
     public List<Metabolite> getMetabolites(Set<String> currencyMolecules)
     {
@@ -121,6 +150,24 @@ public class SeedPathway
         }
 
         return new ArrayList<Metabolite>(metabolitesSet);
+    }
+
+    public Set<MetabolicReaction> reactionsContainingSubstrate(String inchi)
+    {
+        return substrateInchiIndex.get(inchi);
+    }
+
+    public Set<MetabolicReaction> reactionsContainingProduct(String inchi)
+    {
+        return productInchiIndex.get(inchi);
+    }
+
+    public Set<MetabolicReaction> reactionsContainingMolecule(String inchi)
+    {
+        Set<MetabolicReaction> output = new HashSet<MetabolicReaction>();
+        output.addAll(reactionsContainingSubstrate(inchi));
+        output.addAll(reactionsContainingProduct(inchi));
+        return output;
     }
 	
 	public Set<String> constructQueries(String organismID) throws CHEBIException, FileNotFoundException
@@ -151,6 +198,25 @@ public class SeedPathway
 			return false;
 		}
 	}
+
+    public boolean containsAnyMolecule(MetabolicReaction reaction)
+    {
+        boolean found = false;
+
+        for(MetabolicParticipant participant : reaction.getParticipants())
+        {
+            Metabolite m = participant.getMolecule();
+            for(InChI inchi : m.getAnnotations(InChI.class))
+            {
+                if(inchis.contains(inchi.toInChI()))
+                {
+                    found = true;
+                }
+            }
+        }
+
+        return found;
+    }
 	
 	public boolean containsReaction(MetabolicReaction input)
 	{
