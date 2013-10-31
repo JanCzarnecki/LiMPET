@@ -57,11 +57,11 @@ public class Pathway
                     }
                 }
 
-                if(!substrateIndex.containsKey(metabolite.getIdentifier()))
+                if(!substrateIndex.containsKey(metabolite.getIdentifier().toString()))
                 {
-                    substrateIndex.put(inchi, new HashSet<MetabolicReaction>());
+                    substrateIndex.put(metabolite.getIdentifier().toString(), new HashSet<MetabolicReaction>());
                 }
-                substrateIndex.get(metabolite.getIdentifier()).add(r);
+                substrateIndex.get(metabolite.getIdentifier().toString()).add(r);
 
                 if(!substrateInchiIndex.containsKey(inchi))
                 {
@@ -85,11 +85,11 @@ public class Pathway
                     }
                 }
 
-                if(!productIndex.containsKey(metabolite.getIdentifier()))
+                if(!productIndex.containsKey(metabolite.getIdentifier().toString()))
                 {
-                    productIndex.put(inchi, new HashSet<MetabolicReaction>());
+                    productIndex.put(metabolite.getIdentifier().toString(), new HashSet<MetabolicReaction>());
                 }
-                productIndex.get(metabolite.getIdentifier()).add(r);
+                productIndex.get(metabolite.getIdentifier().toString()).add(r);
 
                 if(!productInchiIndex.containsKey(inchi))
                 {
