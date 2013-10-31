@@ -1,6 +1,7 @@
 package uk.ac.bbk.REx.utils;
 
 import uk.ac.bbk.REx.db.bkmDB.BKMDB;
+import uk.ac.bbk.REx.internalTypes.Pathway;
 import uk.ac.ebi.mdk.domain.annotation.InChI;
 import uk.ac.ebi.mdk.domain.annotation.rex.RExCompound;
 import uk.ac.ebi.mdk.domain.annotation.rex.RExExtract;
@@ -579,8 +580,84 @@ public class CompoundAnnotator
      *
      * @param reactions The reactions to calculate relevance for.
      */
-    public static void calculateAlternativePathwayRelevance(Collection<MetabolicReaction> reactions)
+    public static void calculateAlternativePathwayRelevance(
+            Collection<MetabolicReaction> reactions, Collection<MetabolicReaction> seedReactions)
     {
+        Pathway pathway = new Pathway(reactions);
+        Pathway seedPathway = new Pathway(seedReactions);
+
+        Set<MetabolicReaction> seenReactions = new HashSet<MetabolicReaction>();
+        Set<String> relevantMetabolites = new HashSet<String>();
+
+        for(MetabolicReaction reaction : pathway.getReactions())
+        {
+            seenReactions.add(reaction);
+            for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
+            {
+                if(compound.isInBranch()
+                        || !compound.getAlternativePathways().isEmpty()
+                        || compound.isInSeed())
+                {
+                    relevantMetabolites.add(compound.getID());
+                }
+            }
+        }
+
+        Set<MetabolicReaction> nextReactions = new HashSet<MetabolicReaction>();
+        for(String relevantMetaboliteID : relevantMetabolites)
+        {
+            nextReactions.addAll(pathway.getReactionsContainingMolecule(relevantMetaboliteID));
+        }
+        nextReactions.removeAll(seenReactions);
+
+        Map<MetabolicReaction, Integer> totalSeedReactionsInSources = new HashMap<MetabolicReaction, Integer>();
+
+        while(!nextReactions.isEmpty())
+        {
+            for(MetabolicReaction reaction : nextReactions)
+            {
+                seenReactions.add(reaction);
+                TreeSet<Integer> totals = new TreeSet<Integer>();
+                for(RExExtract extract : reaction.getAnnotations(RExExtract.class))
+                {
+                    if(extract.isInCorrectOrganism())
+                    {
+                        totals.add(extract.totalSeedMetabolitesInSource());
+                    }
+                }
+
+                int greatestTotal = totals.last();
+
+                if(
+                    (seedPathway.containsAnyMolecule(reaction) && greatestTotal > 1)
+                    ||
+                    (!seedPathway.containsAnyMolecule(reaction) && greatestTotal > 0)
+                )
+                {
+                    totalSeedReactionsInSources.put(reaction, greatestTotal);
+                    for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
+                    {
+                        relevantMetabolites.add(compound.getID());
+                    }
+                }
+            }
+
+            for(String relevantMetaboliteID : relevantMetabolites)
+            {
+                nextReactions.addAll(pathway.getReactionsContainingMolecule(relevantMetaboliteID));
+            }
+
+            nextReactions.removeAll(seenReactions);
+        }
+
+        for(MetabolicReaction reaction : totalSeedReactionsInSources.keySet())
+        {
+            for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
+            {
+                compound.setRelevance(0.25);
+            }
+        }
+
         for(MetabolicReaction reaction : reactions)
         {
             for(RExCompound compound : reaction.getAnnotations(RExCompound.class))

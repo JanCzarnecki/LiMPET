@@ -24,7 +24,7 @@ import uk.ac.bbk.REx.db.bkmDB.BKMDB;
 import uk.ac.bbk.REx.db.documentDB.DocumentDB;
 import uk.ac.bbk.REx.exception.BKMException;
 import uk.ac.bbk.REx.exception.CHEBIException;
-import uk.ac.bbk.REx.internalTypes.SeedPathway;
+import uk.ac.bbk.REx.internalTypes.Pathway;
 import uk.ac.bbk.REx.utils.*;
 import uk.ac.ebi.mdk.domain.annotation.rex.RExCompound;
 import uk.ac.ebi.mdk.domain.annotation.rex.RExExtract;
@@ -298,7 +298,51 @@ public class CLI
                 System.exit(1);
             }
 
-            CompoundAnnotator.calculateAlternativePathwayRelevance(reactions);
+            InputStream seedInput = null;
+            try
+            {
+                seedInput = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("s"))));
+            }
+            catch (FileNotFoundException e)
+            {
+                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("s")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            SBMLReactionReader seedSBMLReader = null;
+            try
+            {
+                seedSBMLReader = new SBMLReactionReader(
+                        seedInput, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
+            }
+            catch (XMLStreamException e)
+            {
+                System.err.println(String.format("The file %s could not be read.", cmd.getOptionValue("s")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+            Set<MetabolicReaction> seedReactions = new HashSet<MetabolicReaction>();
+
+            while(seedSBMLReader.hasNext())
+            {
+                MetabolicReaction r = seedSBMLReader.next();
+                seedReactions.add(r);
+            }
+
+            try
+            {
+                seedSBMLReader.close();
+            }
+            catch (IOException e)
+            {
+                System.err.println(String.format("The stream from the %s file could not be closed.",
+                        cmd.getOptionValue("s")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            CompoundAnnotator.calculateAlternativePathwayRelevance(reactions, seedReactions);
 
             EntityFactory entityFactory = DefaultEntityFactory.getInstance();
             Reconstruction recon = entityFactory.newReconstruction();
@@ -581,7 +625,7 @@ public class CLI
                     logStackTrace(e);
                     System.exit(1);
                 }
-                CompoundAnnotator.calculateAlternativePathwayRelevance(reactions);
+                CompoundAnnotator.calculateAlternativePathwayRelevance(reactions, seedReactions);
 
                 Results results = Evaluator.evaluateResults(reactions, expectedReactions, new HashSet<String>());
                 try
@@ -649,17 +693,8 @@ public class CLI
                                                     InputStream queriesStream,
                                                     String pmidCutOffs)
     {
-        SeedPathway seed = null;
-        try
-        {
-            seed = new SeedPathway(seedReactions);
-        }
-        catch (CHEBIException e)
-        {
-            System.err.println("There was a problem reading the internal ChEBI database.");
-            logStackTrace(e);
-            System.exit(1);
-        }
+        Pathway seed = null;
+        seed = new Pathway(seedReactions);
         Set<String> queries;
 
         File originalSpeciesFile = new File("data/species-light-original.tsv");
