@@ -231,7 +231,7 @@ public class MultiplePubMedReader extends CollectionReader_ImplBase
 			}
 			
 			//Retrieve the article text.
-			content = pmArticle.getContent();
+			content = pmArticle.getFullText();
 			
 			//Just keep the Introduction.
 			/*
