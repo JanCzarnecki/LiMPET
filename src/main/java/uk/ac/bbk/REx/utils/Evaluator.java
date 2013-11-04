@@ -7,13 +7,16 @@ import uk.ac.ebi.mdk.domain.entity.reaction.MetabolicParticipant;
 import uk.ac.ebi.mdk.domain.entity.reaction.MetabolicReaction;
 
 import java.util.*;
+import java.util.logging.Logger;
 
 public class Evaluator
 {
+    private static final Logger LOGGER = Logger.getLogger(Evaluator.class.getName());
+
     public static Results evaluateResults(
             Collection<MetabolicReaction> reactions,
             Collection<MetabolicReaction> expectedReactions,
-            Set<String> currencyMols)
+            Collection<String> currencyMols)
     {
         Map<String, Set<MetabolicReaction>> substrateIndex = new HashMap<String, Set<MetabolicReaction>>();
         Map<String, Set<MetabolicReaction>> productIndex = new HashMap<String, Set<MetabolicReaction>>();
@@ -215,7 +218,7 @@ public class Evaluator
                                             foundReactions++;
                                             foundReactionsExpected.addAll(commonReactions);
                                             expectedReactionsFound.add(expectedReaction);
-                                            break START;
+                                            continue START;
                                         }
                                     }
                                 }
@@ -259,7 +262,7 @@ public class Evaluator
                         foundReactions++;
                         foundReactionsExpected.addAll(commonReactions);
                         expectedReactionsFound.add(expectedReaction);
-                        break START;
+                        continue START;
                     }
                 }
             }
@@ -298,7 +301,7 @@ public class Evaluator
                         foundReactions++;
                         foundReactionsExpected.addAll(commonReactions);
                         expectedReactionsFound.add(expectedReaction);
-                        break START;
+                        continue START;
                     }
                 }
             }
@@ -350,7 +353,7 @@ public class Evaluator
                     foundReactions++;
                     foundReactionsExpected.addAll(commonReactions);
                     expectedReactionsFound.add(expectedReaction);
-                    break START;
+                    continue START;
                 }
             }
         }
