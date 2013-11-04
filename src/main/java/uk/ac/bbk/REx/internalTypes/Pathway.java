@@ -119,8 +119,16 @@ public class Pathway
     public Set<MetabolicReaction> getReactionsContainingMolecule(String molID)
     {
         Set<MetabolicReaction> output = new HashSet<MetabolicReaction>();
-        output.addAll(substrateIndex.get(molID));
-        output.addAll(productIndex.get(molID));
+        if(substrateIndex.containsKey(molID))
+        {
+            output.addAll(substrateIndex.get(molID));
+        }
+
+        if(productIndex.containsKey(molID))
+        {
+            output.addAll(productIndex.get(molID));
+        }
+
         return output;
     }
 
