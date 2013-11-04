@@ -32,6 +32,7 @@ import uk.ac.ebi.mdk.domain.entity.DefaultEntityFactory;
 import uk.ac.ebi.mdk.domain.entity.EntityFactory;
 import uk.ac.ebi.mdk.domain.entity.Reconstruction;
 import uk.ac.ebi.mdk.domain.entity.reaction.BiochemicalReaction;
+import uk.ac.ebi.mdk.domain.entity.reaction.MetabolicParticipant;
 import uk.ac.ebi.mdk.domain.entity.reaction.MetabolicReaction;
 import uk.ac.ebi.mdk.domain.tool.AutomaticCompartmentResolver;
 import uk.ac.ebi.mdk.io.xml.sbml.SBMLIOUtil;
@@ -627,7 +628,7 @@ public class CLI
                 }
                 CompoundAnnotator.calculateAlternativePathwayRelevance(reactions, seedReactions);
 
-                Results results = Evaluator.evaluateResults(reactions, expectedReactions, new HashSet<String>());
+                Results results = Evaluator.evaluateResults(reactions, expectedReactions, currencyMolecules);
                 try
                 {
                     w.write(i + "," + results.getRecall() + "," + results.getPrecision() + "\n");
@@ -647,6 +648,168 @@ public class CLI
             catch (IOException e)
             {
                 System.err.println(String.format("The stream to the %s file could not be closed.",
+                        cmd.getOptionValue("o")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+        }
+        else if(cmd.getOptionValue("m").equals("evaluate"))
+        {
+            InputStream input = null;
+            try
+            {
+                input = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("i"))));
+            }
+            catch (FileNotFoundException e)
+            {
+                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("i")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            SBMLReactionReader sbmlReader = null;
+            try
+            {
+                sbmlReader = new SBMLReactionReader(
+                        input, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
+            }
+            catch (XMLStreamException e)
+            {
+                System.err.println(String.format("The file %s could not be read.", cmd.getOptionValue("i")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+            Set<MetabolicReaction> reactions = new HashSet<MetabolicReaction>();
+
+            while(sbmlReader.hasNext())
+            {
+                MetabolicReaction r = sbmlReader.next();
+                reactions.add(r);
+            }
+
+            try
+            {
+                sbmlReader.close();
+            }
+            catch (IOException e)
+            {
+                System.err.println(String.format("The stream from the %s file could not be closed.",
+                        cmd.getOptionValue("i")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            InputStream expectedInput = null;
+            try
+            {
+                expectedInput = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("e"))));
+            }
+            catch (FileNotFoundException e)
+            {
+                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("e")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            SBMLReactionReader expectedSBMLReader = null;
+            try
+            {
+                expectedSBMLReader = new SBMLReactionReader(
+                        expectedInput, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
+            }
+            catch (XMLStreamException e)
+            {
+                System.err.println(String.format("The file %s could not be read.", cmd.getOptionValue("e")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+            Set<MetabolicReaction> expectedReactions = new HashSet<MetabolicReaction>();
+
+            while(expectedSBMLReader.hasNext())
+            {
+                MetabolicReaction r = expectedSBMLReader.next();
+                expectedReactions.add(r);
+            }
+
+            try
+            {
+                expectedSBMLReader.close();
+            }
+            catch (IOException e)
+            {
+                System.err.println(String.format("The stream from the file %s could not be closed.",
+                        cmd.getOptionValue("e")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            Gson gson = new Gson();
+            Type mapType = new TypeToken<Map<String, String>>(){}.getType();
+            Map<String, String> currencyMoleculesMap = gson.fromJson(new InputStreamReader(
+                    CLI.class.getResourceAsStream("/uk/ac/bbk/REx/settings/currencyMolecules.json")), mapType);
+            Set<String> currencyMolecules = new HashSet<String>(currencyMoleculesMap.values());
+
+            Results results = Evaluator.evaluateResults(reactions, expectedReactions, currencyMolecules);
+
+            Writer writer;
+            try
+            {
+                writer = new BufferedWriter(new FileWriter(new File(cmd.getOptionValue("o"))));
+            }
+            catch (IOException e)
+            {
+                System.err.println(String.format("The file %s could not be written to.",
+                        cmd.getOptionValue("o")));
+                logStackTrace(e);
+                System.exit(1);
+                return;
+            }
+
+            String headerTemplate =
+                    "Recall: %f\n" +
+                            "Precision %f\n\n";
+
+            String header = String.format(headerTemplate,
+                    results.getRecall(),
+                    results.getPrecision());
+
+            try
+            {
+                writer.write(header);
+
+                writer.write("Reactions expected and found:\n");
+                for(MetabolicReaction reaction : results.getReactionsExpectedAndFound())
+                {
+                    writer.write(reactionToString(reaction) + "\n");
+                }
+
+                writer.write("\nReactions expected, but not found:\n");
+                for(MetabolicReaction reaction : results.getReactionsExpectedButNotFound())
+                {
+                    writer.write(reactionToString(reaction) + "\n");
+                }
+
+                writer.write("\nReactions found, but not expected:\n");
+                for(MetabolicReaction reaction : results.getReactionsFoundButNotExpected())
+                {
+                    writer.write(reactionToString(reaction) + "\n");
+                }
+            }
+            catch(IOException e)
+            {
+                System.err.println(String.format("The file %s could not be written to.",
+                        cmd.getOptionValue("o")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            try
+            {
+                writer.close();
+            }
+            catch(IOException e)
+            {
+                System.err.println(String.format("The stream to the file %s could not be closed.",
                         cmd.getOptionValue("o")));
                 logStackTrace(e);
                 System.exit(1);
@@ -1044,5 +1207,42 @@ public class CLI
         StringWriter sw = new StringWriter();
         e.printStackTrace(new PrintWriter(sw));
         LOGGER.log(Level.INFO, sw.toString());
+    }
+
+    private static String reactionToString(MetabolicReaction reaction)
+    {
+        StringBuilder output = new StringBuilder();
+
+        List<MetabolicParticipant> substrates = reaction.getReactants();
+        int totalSubstrates = substrates.size();
+        int count = 0;
+        for(MetabolicParticipant substrate : substrates)
+        {
+            count++;
+            output.append(substrate.getMolecule().getName() + " ");
+
+            if(count < totalSubstrates)
+            {
+                output.append("+ ");
+            }
+        }
+
+        output.append("-> ");
+
+        List<MetabolicParticipant> products = reaction.getProducts();
+        int totalProducts = products.size();
+        count = 0;
+        for(MetabolicParticipant product : products)
+        {
+            count++;
+            output.append(product.getMolecule().getName() + " ");
+
+            if(count < totalProducts)
+            {
+                output.append("+ ");
+            }
+        }
+
+        return output.toString();
     }
 }
