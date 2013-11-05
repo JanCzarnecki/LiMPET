@@ -309,9 +309,9 @@ public class Article
                         nextWebPage = Jsoup.connect(link.attr("abs:href")).timeout(20000).get();
                         LOGGER.log(Level.INFO, "Fetching: " + link.attr("abs:href"));
                     }
-                    catch(IllegalArgumentException e)
+                    catch(IOException e)
                     {
-                        LOGGER.log(Level.INFO, "Non-valid URL: " + link.attr("abs:href"));
+                        LOGGER.log(Level.INFO, "Could not connect: " + link.attr("abs:href"));
                         continue;
                     }
                     //Check if the linked page is big enough
@@ -548,7 +548,7 @@ public class Article
             return null;
         }
         String text = stripper.getText(doc);
-
+        doc.close();
         text = text.replaceAll("-\\n", "-");
         text = text.replaceAll("\\n", " ");
         text = text.replaceAll("[^A-Za-z\\s(){}_,.:;<>!=&\\-+\"'0-9|%]", " ");
