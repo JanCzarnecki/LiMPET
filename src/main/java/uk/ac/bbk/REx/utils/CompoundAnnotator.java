@@ -685,4 +685,138 @@ public class CompoundAnnotator
             }
         }
     }
+
+    public static void calculatePathwayLinkRelevance(
+            Pathway pathway, Collection<String> pathwaysOfInterest)
+    {
+        Set<MetabolicReaction> seedReactions = new HashSet<MetabolicReaction>();
+        Set<MetabolicReaction> reactionsInPathwaysOfInterest = new HashSet<MetabolicReaction>();
+
+        for(MetabolicReaction reaction : pathway.getReactions())
+        {
+            Set<String> pathwaysFound  = new HashSet<String>();
+            for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
+            {
+                pathwaysFound.addAll(compound.getAlternativePathways());
+                pathwaysFound.addAll(compound.getOtherPathways());
+
+                if(compound.isInSeed())
+                {
+                    seedReactions.add(reaction);
+                }
+            }
+
+            pathwaysFound.retainAll(pathwaysOfInterest);
+
+            if(!pathwaysFound.isEmpty())
+            {
+                reactionsInPathwaysOfInterest.add(reaction);
+            }
+        }
+
+        //Find links from seed reactions to reactions in pathways of interest.
+        Set<List<MetabolicReaction>> links =
+                findLinksBetweenReactions(seedReactions, reactionsInPathwaysOfInterest, pathway);
+
+        //Find links from reactions in pathways of interest and seedReactions.
+        links.addAll(findLinksBetweenReactions(reactionsInPathwaysOfInterest, seedReactions, pathway));
+
+
+        //Score the relevances
+        for(List<MetabolicReaction> link : links)
+        {
+            for(MetabolicReaction reaction : link)
+            {
+                for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
+                {
+                    compound.setRelevance(0.5);
+                }
+            }
+        }
+
+        for(MetabolicReaction seedReaction : seedReactions)
+        {
+            for(RExCompound compound : seedReaction.getAnnotations(RExCompound.class))
+            {
+                compound.setRelevance(1.0);
+            }
+        }
+
+        for(MetabolicReaction reactionInPathwayOfInterest : reactionsInPathwaysOfInterest)
+        {
+            for(RExCompound compound : reactionInPathwayOfInterest.getAnnotations(RExCompound.class))
+            {
+                compound.setRelevance(1.0);
+            }
+        }
+    }
+
+    private static Set<List<MetabolicReaction>> findLinksBetweenReactions(
+            Set<MetabolicReaction> startReactions, Set<MetabolicReaction> endReactions, Pathway pathway)
+    {
+        Set<List<MetabolicReaction>> linksInProgress = new HashSet<List<MetabolicReaction>>();
+        Set<MetabolicReaction> seenReactions = new HashSet<MetabolicReaction>();
+        for(MetabolicReaction reaction : startReactions)
+        {
+            List<MetabolicReaction> link = new ArrayList<MetabolicReaction>();
+            link.add(reaction);
+            linksInProgress.add(link);
+            seenReactions.add(reaction);
+        }
+
+        Set<List<MetabolicReaction>> completedLinks = new HashSet<List<MetabolicReaction>>();
+
+        while(!linksInProgress.isEmpty())
+        {
+            Set<List<MetabolicReaction>> newLinks = new HashSet<List<MetabolicReaction>>();
+
+            for(List<MetabolicReaction> linkInProgress : linksInProgress)
+            {
+                MetabolicReaction lastReaction = linkInProgress.get(linkInProgress.size()-1);
+                for(RExCompound lastCompound : lastReaction.getAnnotations(RExCompound.class))
+                {
+                    if(lastCompound.getType() == RExCompound.Type.PRODUCT
+                            && lastCompound.getExtraction() > 5.0)
+                    {
+                        for(MetabolicReaction nextReaction : pathway.getReactionsContainingSubstrate(lastCompound.getID()))
+                        {
+                            if(!seenReactions.contains(nextReaction))
+                            {
+                                List<MetabolicReaction> newLink = new ArrayList<MetabolicReaction>(linkInProgress);
+                                newLink.add(nextReaction);
+
+                                if(endReactions.contains(nextReaction))
+                                {
+                                    completedLinks.add(newLink);
+                                }
+                                else
+                                {
+                                    //Check if the same compound has an adequate extraction score.
+                                    boolean foundNextCompound = false;
+                                    for(RExCompound nextCompound : nextReaction.getAnnotations(RExCompound.class))
+                                    {
+                                        if(nextCompound.getID().equals(lastCompound.getID())
+                                                && nextCompound.getType() == RExCompound.Type.SUBSTRATE
+                                                && nextCompound.getExtraction() > 5.0)
+                                        {
+                                            foundNextCompound = true;
+                                        }
+                                    }
+
+                                    if(foundNextCompound)
+                                    {
+                                        newLinks.add(newLink);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            linksInProgress = newLinks;
+        }
+
+        return completedLinks;
+    }
 }
