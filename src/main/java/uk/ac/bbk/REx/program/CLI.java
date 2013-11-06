@@ -109,50 +109,7 @@ public class CLI
 
         if(cmd.getOptionValue("m").equals("extraction"))
         {
-            InputStream input = null;
-            try
-            {
-                input = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("i"))));
-            }
-            catch(FileNotFoundException e)
-            {
-                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("i")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-
-            SBMLReactionReader sbmlReader = null;
-            try
-            {
-                sbmlReader = new SBMLReactionReader(
-                        input, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
-            }
-            catch(XMLStreamException e)
-            {
-                System.err.println("The input XML file could not be read.");
-                logStackTrace(e);
-                System.exit(1);
-            }
-
-            List<MetabolicReaction> seedReactions = new ArrayList<MetabolicReaction>();
-
-            while(sbmlReader.hasNext())
-            {
-                MetabolicReaction r = sbmlReader.next();
-                seedReactions.add(r);
-            }
-
-            try
-            {
-                sbmlReader.close();
-                input.close();
-            }
-            catch(IOException e)
-            {
-                System.err.println("The stream from the input file could not be closed.");
-                logStackTrace(e);
-                System.exit(1);
-            }
+            List<MetabolicReaction> seedReactions = Util.readInSBML(cmd.getOptionValue("i"), System.err);
 
             int maxReturn = Integer.parseInt(cmd.getOptionValue("n"));
             String speciesID = cmd.getOptionValue("s");
@@ -222,202 +179,24 @@ public class CLI
                 {
                     System.err.println(String.format("Error closing stream from file %s.\n", cmd.getOptionValue("q")));
                     logStackTrace(e);
-                    System.exit(1);                }
+                    System.exit(1);
+                }
             }
 
-            EntityFactory entityFactory = DefaultEntityFactory.getInstance();
-            Reconstruction recon = entityFactory.newReconstruction();
-
-            for(MetabolicReaction mdkReaction : combinedReactions)
-            {
-                recon.addReaction(mdkReaction);
-            }
-
-            SBMLIOUtil util = new SBMLIOUtil(entityFactory, 2, 4);
-            SBMLDocument doc = util.getDocument(recon);
-
-            SBMLWriter writer = new SBMLWriter();
-            try
-            {
-                writer.write(doc, new BufferedOutputStream(new FileOutputStream(new File(cmd.getOptionValue("o")))));
-            }
-            catch (XMLStreamException e)
-            {
-                System.err.println(String.format("Error writing to file %s.\n", cmd.getOptionValue("o")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-            catch (FileNotFoundException e)
-            {
-                System.err.println(String.format("Error writing to file %s.\n", cmd.getOptionValue("o")));
-                logStackTrace(e);
-                System.exit(1);
-            }
+            Util.writeOutSBML(combinedReactions, cmd.getOptionValue("o"), System.err);
         }
         else if(cmd.getOptionValue("m").equals("alternativePathwayRelevance"))
         {
-            InputStream input = null;
-            try
-            {
-                input = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("i"))));
-            }
-            catch (FileNotFoundException e)
-            {
-                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("i")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-
-            SBMLReactionReader sbmlReader = null;
-            try
-            {
-                sbmlReader = new SBMLReactionReader(
-                        input, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
-            }
-            catch (XMLStreamException e)
-            {
-                System.err.println("The input XML file could not be read.");
-                logStackTrace(e);
-                System.exit(1);
-            }
-            Set<MetabolicReaction> reactions = new HashSet<MetabolicReaction>();
-
-            while(sbmlReader.hasNext())
-            {
-                MetabolicReaction r = sbmlReader.next();
-                reactions.add(r);
-            }
-
-            try
-            {
-                input.close();
-            }
-            catch (IOException e)
-            {
-                System.err.println("The stream from the input file could not be closed.");
-                logStackTrace(e);
-                System.exit(1);
-            }
-
-            InputStream seedInput = null;
-            try
-            {
-                seedInput = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("s"))));
-            }
-            catch (FileNotFoundException e)
-            {
-                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("s")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-
-            SBMLReactionReader seedSBMLReader = null;
-            try
-            {
-                seedSBMLReader = new SBMLReactionReader(
-                        seedInput, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
-            }
-            catch (XMLStreamException e)
-            {
-                System.err.println(String.format("The file %s could not be read.", cmd.getOptionValue("s")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-            Set<MetabolicReaction> seedReactions = new HashSet<MetabolicReaction>();
-
-            while(seedSBMLReader.hasNext())
-            {
-                MetabolicReaction r = seedSBMLReader.next();
-                seedReactions.add(r);
-            }
-
-            try
-            {
-                seedSBMLReader.close();
-            }
-            catch (IOException e)
-            {
-                System.err.println(String.format("The stream from the %s file could not be closed.",
-                        cmd.getOptionValue("s")));
-                logStackTrace(e);
-                System.exit(1);
-            }
+            List<MetabolicReaction> reactions = Util.readInSBML(cmd.getOptionValue("i"), System.err);
+            List<MetabolicReaction> seedReactions = Util.readInSBML(cmd.getOptionValue("s"), System.err);
 
             CompoundAnnotator.calculateAlternativePathwayRelevance(reactions, seedReactions);
 
-            EntityFactory entityFactory = DefaultEntityFactory.getInstance();
-            Reconstruction recon = entityFactory.newReconstruction();
-
-            for(MetabolicReaction mdkReaction : reactions)
-            {
-                recon.addReaction(mdkReaction);
-            }
-
-            SBMLIOUtil util = new SBMLIOUtil(entityFactory, 2, 4);
-            SBMLDocument doc = util.getDocument(recon);
-
-            SBMLWriter writer = new SBMLWriter();
-            try
-            {
-                writer.write(doc, new BufferedOutputStream(new FileOutputStream(new File(cmd.getOptionValue("o")))));
-            }
-            catch (XMLStreamException e)
-            {
-                System.err.println(String.format("Error writing to file %s.\n", cmd.getOptionValue("o")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-            catch (FileNotFoundException e)
-            {
-                System.err.println(String.format("Error writing to file %s.\n", cmd.getOptionValue("o")));
-                logStackTrace(e);
-                System.exit(1);
-            }
+            Util.writeOutSBML(reactions, cmd.getOptionValue("o"), System.err);
         }
         else if(cmd.getOptionValue("m").equals("pathwayLinkRelevance"))
         {
-            InputStream input = null;
-            try
-            {
-                input = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("i"))));
-            }
-            catch (FileNotFoundException e)
-            {
-                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("i")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-
-            SBMLReactionReader sbmlReader = null;
-            try
-            {
-                sbmlReader = new SBMLReactionReader(
-                        input, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
-            }
-            catch (XMLStreamException e)
-            {
-                System.err.println("The input XML file could not be read.");
-                logStackTrace(e);
-                System.exit(1);
-            }
-            Set<MetabolicReaction> reactions = new HashSet<MetabolicReaction>();
-
-            while(sbmlReader.hasNext())
-            {
-                MetabolicReaction r = sbmlReader.next();
-                reactions.add(r);
-            }
-
-            try
-            {
-                input.close();
-            }
-            catch (IOException e)
-            {
-                System.err.println("The stream from the input file could not be closed.");
-                logStackTrace(e);
-                System.exit(1);
-            }
+            List<MetabolicReaction> reactions = Util.readInSBML(cmd.getOptionValue("i"), System.err);
 
             InputStream pathwaysStream = null;
             try
@@ -442,34 +221,7 @@ public class CLI
 
             CompoundAnnotator.calculatePathwayLinkRelevance(new Pathway(reactions), pathwayIDs);
 
-            EntityFactory entityFactory = DefaultEntityFactory.getInstance();
-            Reconstruction recon = entityFactory.newReconstruction();
-
-            for(MetabolicReaction mdkReaction : reactions)
-            {
-                recon.addReaction(mdkReaction);
-            }
-
-            SBMLIOUtil util = new SBMLIOUtil(entityFactory, 2, 4);
-            SBMLDocument doc = util.getDocument(recon);
-
-            SBMLWriter writer = new SBMLWriter();
-            try
-            {
-                writer.write(doc, new BufferedOutputStream(new FileOutputStream(new File(cmd.getOptionValue("o")))));
-            }
-            catch (XMLStreamException e)
-            {
-                System.err.println(String.format("Error writing to file %s.\n", cmd.getOptionValue("o")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-            catch (FileNotFoundException e)
-            {
-                System.err.println(String.format("Error writing to file %s.\n", cmd.getOptionValue("o")));
-                logStackTrace(e);
-                System.exit(1);
-            }
+            Util.writeOutSBML(reactions, cmd.getOptionValue("o"), System.err);
         }
         else if(cmd.getOptionValue("m").equals("continuousTest"))
         {
@@ -506,137 +258,9 @@ public class CLI
                 }
             }
 
-            InputStream input = null;
-            try
-            {
-                input = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("i"))));
-            }
-            catch (FileNotFoundException e)
-            {
-                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("i")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-
-            SBMLReactionReader sbmlReader = null;
-            try
-            {
-                sbmlReader = new SBMLReactionReader(
-                        input, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
-            }
-            catch (XMLStreamException e)
-            {
-                System.err.println(String.format("The file %s could not be read.", cmd.getOptionValue("i")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-            Set<MetabolicReaction> reactions = new HashSet<MetabolicReaction>();
-
-            while(sbmlReader.hasNext())
-            {
-                MetabolicReaction r = sbmlReader.next();
-                reactions.add(r);
-            }
-
-            try
-            {
-                sbmlReader.close();
-            }
-            catch (IOException e)
-            {
-                System.err.println(String.format("The stream from the %s file could not be closed.",
-                        cmd.getOptionValue("i")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-
-            InputStream seedInput = null;
-            try
-            {
-                seedInput = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("s"))));
-            }
-            catch (FileNotFoundException e)
-            {
-                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("s")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-
-            SBMLReactionReader seedSBMLReader = null;
-            try
-            {
-                seedSBMLReader = new SBMLReactionReader(
-                        seedInput, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
-            }
-            catch (XMLStreamException e)
-            {
-                System.err.println(String.format("The file %s could not be read.", cmd.getOptionValue("s")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-            Set<MetabolicReaction> seedReactions = new HashSet<MetabolicReaction>();
-
-            while(seedSBMLReader.hasNext())
-            {
-                MetabolicReaction r = seedSBMLReader.next();
-                seedReactions.add(r);
-            }
-
-            try
-            {
-                seedSBMLReader.close();
-            }
-            catch (IOException e)
-            {
-                System.err.println(String.format("The stream from the %s file could not be closed.",
-                        cmd.getOptionValue("s")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-
-            InputStream expectedInput = null;
-            try
-            {
-                expectedInput = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("e"))));
-            }
-            catch (FileNotFoundException e)
-            {
-                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("e")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-
-            SBMLReactionReader expectedSBMLReader = null;
-            try
-            {
-                expectedSBMLReader = new SBMLReactionReader(
-                        expectedInput, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
-            }
-            catch (XMLStreamException e)
-            {
-                System.err.println(String.format("The file %s could not be read.", cmd.getOptionValue("e")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-            Set<MetabolicReaction> expectedReactions = new HashSet<MetabolicReaction>();
-
-            while(expectedSBMLReader.hasNext())
-            {
-                MetabolicReaction r = expectedSBMLReader.next();
-                expectedReactions.add(r);
-            }
-
-            try
-            {
-                expectedSBMLReader.close();
-            }
-            catch (IOException e)
-            {
-                System.err.println(String.format("The stream from the %s file could not be closed.",
-                        cmd.getOptionValue("e")));
-                logStackTrace(e);
-                System.exit(1);
-            }
+            List<MetabolicReaction> reactions = Util.readInSBML(cmd.getOptionValue("i"), System.err);
+            List<MetabolicReaction> seedReactions = Util.readInSBML(cmd.getOptionValue("s"), System.err);
+            List<MetabolicReaction> expectedReactions = Util.readInSBML(cmd.getOptionValue("e"), System.err);
 
             BKMDB bkmDB = null;
             try
@@ -752,93 +376,8 @@ public class CLI
         }
         else if(cmd.getOptionValue("m").equals("evaluate"))
         {
-            InputStream input = null;
-            try
-            {
-                input = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("i"))));
-            }
-            catch (FileNotFoundException e)
-            {
-                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("i")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-
-            SBMLReactionReader sbmlReader = null;
-            try
-            {
-                sbmlReader = new SBMLReactionReader(
-                        input, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
-            }
-            catch (XMLStreamException e)
-            {
-                System.err.println(String.format("The file %s could not be read.", cmd.getOptionValue("i")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-            Set<MetabolicReaction> reactions = new HashSet<MetabolicReaction>();
-
-            while(sbmlReader.hasNext())
-            {
-                MetabolicReaction r = sbmlReader.next();
-                reactions.add(r);
-            }
-
-            try
-            {
-                sbmlReader.close();
-            }
-            catch (IOException e)
-            {
-                System.err.println(String.format("The stream from the %s file could not be closed.",
-                        cmd.getOptionValue("i")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-
-            InputStream expectedInput = null;
-            try
-            {
-                expectedInput = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("e"))));
-            }
-            catch (FileNotFoundException e)
-            {
-                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("e")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-
-            SBMLReactionReader expectedSBMLReader = null;
-            try
-            {
-                expectedSBMLReader = new SBMLReactionReader(
-                        expectedInput, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
-            }
-            catch (XMLStreamException e)
-            {
-                System.err.println(String.format("The file %s could not be read.", cmd.getOptionValue("e")));
-                logStackTrace(e);
-                System.exit(1);
-            }
-            Set<MetabolicReaction> expectedReactions = new HashSet<MetabolicReaction>();
-
-            while(expectedSBMLReader.hasNext())
-            {
-                MetabolicReaction r = expectedSBMLReader.next();
-                expectedReactions.add(r);
-            }
-
-            try
-            {
-                expectedSBMLReader.close();
-            }
-            catch (IOException e)
-            {
-                System.err.println(String.format("The stream from the file %s could not be closed.",
-                        cmd.getOptionValue("e")));
-                logStackTrace(e);
-                System.exit(1);
-            }
+            List<MetabolicReaction> reactions = Util.readInSBML(cmd.getOptionValue("i"), System.err);
+            List<MetabolicReaction> expectedReactions = Util.readInSBML(cmd.getOptionValue("e"), System.err);
 
             Gson gson = new Gson();
             Type mapType = new TypeToken<Map<String, String>>(){}.getType();
