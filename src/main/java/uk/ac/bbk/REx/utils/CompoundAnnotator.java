@@ -580,11 +580,9 @@ public class CompoundAnnotator
      *
      * @param reactions The reactions to calculate relevance for.
      */
-    public static void calculateAlternativePathwayRelevance(
-            Collection<MetabolicReaction> reactions, Collection<MetabolicReaction> seedReactions)
+    public static void calculateAlternativePathwayRelevance(Collection<MetabolicReaction> reactions)
     {
         Pathway pathway = new Pathway(reactions);
-        Pathway seedPathway = new Pathway(seedReactions);
 
         Set<MetabolicReaction> seenReactions = new HashSet<MetabolicReaction>();
         Set<String> relevantMetabolites = new HashSet<String>();
@@ -628,11 +626,7 @@ public class CompoundAnnotator
 
                 int greatestTotal = totals.last();
 
-                if(
-                    (seedPathway.containsAnyMolecule(reaction) && greatestTotal > 1)
-                    ||
-                    (!seedPathway.containsAnyMolecule(reaction) && greatestTotal > 0)
-                )
+                if(greatestTotal > 1)
                 {
                     totalSeedReactionsInSources.put(reaction, greatestTotal);
                     for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
