@@ -254,7 +254,7 @@ public class CLI
                 System.exit(1);
             }
         }
-        else if(cmd.getOptionValue("m").equals("relevance"))
+        else if(cmd.getOptionValue("m").equals("alternativePathwayRelevance"))
         {
             InputStream input = null;
             try
@@ -344,6 +344,103 @@ public class CLI
             }
 
             CompoundAnnotator.calculateAlternativePathwayRelevance(reactions, seedReactions);
+
+            EntityFactory entityFactory = DefaultEntityFactory.getInstance();
+            Reconstruction recon = entityFactory.newReconstruction();
+
+            for(MetabolicReaction mdkReaction : reactions)
+            {
+                recon.addReaction(mdkReaction);
+            }
+
+            SBMLIOUtil util = new SBMLIOUtil(entityFactory, 2, 4);
+            SBMLDocument doc = util.getDocument(recon);
+
+            SBMLWriter writer = new SBMLWriter();
+            try
+            {
+                writer.write(doc, new BufferedOutputStream(new FileOutputStream(new File(cmd.getOptionValue("o")))));
+            }
+            catch (XMLStreamException e)
+            {
+                System.err.println(String.format("Error writing to file %s.\n", cmd.getOptionValue("o")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+            catch (FileNotFoundException e)
+            {
+                System.err.println(String.format("Error writing to file %s.\n", cmd.getOptionValue("o")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+        }
+        else if(cmd.getOptionValue("m").equals("pathwayLinkRelevance"))
+        {
+            InputStream input = null;
+            try
+            {
+                input = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("i"))));
+            }
+            catch (FileNotFoundException e)
+            {
+                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("i")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            SBMLReactionReader sbmlReader = null;
+            try
+            {
+                sbmlReader = new SBMLReactionReader(
+                        input, DefaultEntityFactory.getInstance(), new AutomaticCompartmentResolver());
+            }
+            catch (XMLStreamException e)
+            {
+                System.err.println("The input XML file could not be read.");
+                logStackTrace(e);
+                System.exit(1);
+            }
+            Set<MetabolicReaction> reactions = new HashSet<MetabolicReaction>();
+
+            while(sbmlReader.hasNext())
+            {
+                MetabolicReaction r = sbmlReader.next();
+                reactions.add(r);
+            }
+
+            try
+            {
+                input.close();
+            }
+            catch (IOException e)
+            {
+                System.err.println("The stream from the input file could not be closed.");
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            InputStream pathwaysStream = null;
+            try
+            {
+                pathwaysStream = new BufferedInputStream(new FileInputStream(new File(cmd.getOptionValue("p"))));
+            }
+            catch (FileNotFoundException e)
+            {
+                System.err.println(String.format("The file %s could not be found.", cmd.getOptionValue("p")));
+                logStackTrace(e);
+                System.exit(1);
+            }
+
+            List<String> pathwayIDs = new ArrayList<String>();
+            Scanner sc = new Scanner(new BufferedInputStream(pathwaysStream));
+            while(sc.hasNextLine())
+            {
+                pathwayIDs.add(sc.nextLine());
+            }
+
+            sc.close();
+
+            CompoundAnnotator.calculatePathwayLinkRelevance(new Pathway(reactions), pathwayIDs);
 
             EntityFactory entityFactory = DefaultEntityFactory.getInstance();
             Reconstruction recon = entityFactory.newReconstruction();
