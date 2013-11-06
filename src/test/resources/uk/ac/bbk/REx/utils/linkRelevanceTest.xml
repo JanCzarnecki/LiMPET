@@ -221,13 +221,17 @@
                         <rex:components>
                             <rex:reactants>
                                 <rex:compound extraction="6.0" id="other1" isInBRENDA="true" isInBranch="false" isInSeed="false" relevance="0.0">
-                                    <rex:alternativePathways/>
+                                    <rex:alternativePathways>
+                                        <rex:pathway id="boringPathway"/>
+                                    </rex:alternativePathways>
                                     <rex:otherPathways/>
                                 </rex:compound>
                             </rex:reactants>
                             <rex:products>
                                 <rex:compound extraction="6.0" id="other2" isInBRENDA="true" isInBranch="false" isInSeed="false" relevance="0.0">
-                                    <rex:alternativePathways/>
+                                    <rex:alternativePathways>
+                                        <rex:pathway id="boringPathway"/>
+                                    </rex:alternativePathways>
                                     <rex:otherPathways/>
                                 </rex:compound>
                             </rex:products>

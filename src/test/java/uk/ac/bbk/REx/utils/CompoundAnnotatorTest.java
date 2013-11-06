@@ -13,6 +13,7 @@ import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeMap;
 
 import static junit.framework.Assert.assertEquals;
 
@@ -38,22 +39,23 @@ public class CompoundAnnotatorTest
         pathwaysOfInterest.add("interestingPathway");
 
         CompoundAnnotator.calculatePathwayLinkRelevance(pathway, pathwaysOfInterest);
-        double relevance = 0;
+        TreeMap<String, Double> results = new TreeMap<String, Double>();
 
         for(MetabolicReaction reaction : pathway.getReactions())
         {
-            if(reaction.getIdentifier().toString().equals("rex5"))
+            for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
             {
-                for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
-                {
-                    if(compound.getID().equals("link1"))
-                    {
-                        relevance = compound.getRelevance();
-                    }
-                }
+                String id = String.format("%s-%s", reaction.getIdentifier().toString(), compound.getID());
+                results.put(id, compound.getRelevance());
             }
         }
 
-        assertEquals(0.5, relevance);
+        String resultsString = String.format("%s - %s - %s - %s",
+                results.get("rex1-seed1"),
+                results.get("rex3-otherPathway1"),
+                results.get("rex5-link1"),
+                results.get("rex8-other1"));
+
+        assertEquals("1.0 - 1.0 - 0.5 - 0.0", resultsString);
     }
 }
