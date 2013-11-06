@@ -5,6 +5,7 @@ import org.sbml.jsbml.SBMLWriter;
 import uk.ac.ebi.mdk.domain.entity.DefaultEntityFactory;
 import uk.ac.ebi.mdk.domain.entity.EntityFactory;
 import uk.ac.ebi.mdk.domain.entity.Reconstruction;
+import uk.ac.ebi.mdk.domain.entity.reaction.MetabolicParticipant;
 import uk.ac.ebi.mdk.domain.entity.reaction.MetabolicReaction;
 import uk.ac.ebi.mdk.domain.tool.AutomaticCompartmentResolver;
 import uk.ac.ebi.mdk.io.xml.sbml.SBMLIOUtil;
@@ -108,5 +109,42 @@ public class Util
         StringWriter sw = new StringWriter();
         e.printStackTrace(new PrintWriter(sw));
         LOGGER.log(Level.INFO, sw.toString());
+    }
+
+    public static String reactionToString(MetabolicReaction reaction)
+    {
+        StringBuilder output = new StringBuilder();
+
+        List<MetabolicParticipant> substrates = reaction.getReactants();
+        int totalSubstrates = substrates.size();
+        int count = 0;
+        for(MetabolicParticipant substrate : substrates)
+        {
+            count++;
+            output.append(substrate.getMolecule().getName() + " ");
+
+            if(count < totalSubstrates)
+            {
+                output.append("+ ");
+            }
+        }
+
+        output.append("-> ");
+
+        List<MetabolicParticipant> products = reaction.getProducts();
+        int totalProducts = products.size();
+        count = 0;
+        for(MetabolicParticipant product : products)
+        {
+            count++;
+            output.append(product.getMolecule().getName() + " ");
+
+            if(count < totalProducts)
+            {
+                output.append("+ ");
+            }
+        }
+
+        return output.toString();
     }
 }
