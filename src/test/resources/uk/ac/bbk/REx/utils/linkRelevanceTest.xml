@@ -1,0 +1,250 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="4">
+    <model id="model">
+        <listOfSpecies>
+            <species id="seed1" name="seed 1" metaid="_000000001"></species>
+            <species id="seed2" name="seed 2" metaid="_000000002"></species>
+            <species id="seed3" name="seed 3" metaid="_000000003"></species>
+            <species id="otherPathway1" name="other pathway 1" metaid="_000000004"></species>
+            <species id="otherPathway2" name="other pathway 2" metaid="_000000005"></species>
+            <species id="link1" name="link 1" metaid="_000000006"></species>
+            <species id="link2" name="link 2" metaid="_000000007"></species>
+            <species id="other1" name="other 1" metaid="_000000008"></species>
+            <species id="other2" name="other 2" metaid="_000000009"></species>
+        </listOfSpecies>
+        <listOfReactions>
+            <reaction id="rex1">
+                <annotation>
+                    <rex:rex xmlns:rex="http://www.bbk.ac.uk/rex/">
+                        <rex:extracts>
+                        </rex:extracts>
+                        <rex:components>
+                            <rex:reactants>
+                                <rex:compound extraction="6.0" id="seed1" isInBRENDA="true" isInBranch="true" isInSeed="true" relevance="0.0">
+                                    <rex:alternativePathways/>
+                                    <rex:otherPathways/>
+                                </rex:compound>
+                            </rex:reactants>
+                            <rex:products>
+                                <rex:compound extraction="6.0" id="seed2" isInBRENDA="true" isInBranch="true" isInSeed="true" relevance="0.0">
+                                    <rex:alternativePathways/>
+                                    <rex:otherPathways/>
+                                </rex:compound>
+                            </rex:products>
+                        </rex:components>
+                    </rex:rex>
+                </annotation>
+                <listOfReactants>
+                    <speciesReference species="seed1" />
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="seed2" />
+                </listOfProducts>
+            </reaction>
+            <reaction id="rex2">
+                <annotation>
+                    <rex:rex xmlns:rex="http://www.bbk.ac.uk/rex/">
+                        <rex:extracts>
+                        </rex:extracts>
+                        <rex:components>
+                            <rex:reactants>
+                                <rex:compound extraction="6.0" id="seed2" isInBRENDA="true" isInBranch="true" isInSeed="true" relevance="0.0">
+                                    <rex:alternativePathways/>
+                                    <rex:otherPathways/>
+                                </rex:compound>
+                            </rex:reactants>
+                            <rex:products>
+                                <rex:compound extraction="6.0" id="seed3" isInBRENDA="true" isInBranch="true" isInSeed="true" relevance="0.0">
+                                    <rex:alternativePathways/>
+                                    <rex:otherPathways/>
+                                </rex:compound>
+                            </rex:products>
+                        </rex:components>
+                    </rex:rex>
+                </annotation>
+                <listOfReactants>
+                    <speciesReference species="seed2" />
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="seed3" />
+                </listOfProducts>
+            </reaction>
+            <reaction id="rex3">
+                <annotation>
+                    <rex:rex xmlns:rex="http://www.bbk.ac.uk/rex/">
+                        <rex:extracts>
+                        </rex:extracts>
+                        <rex:components>
+                            <rex:reactants>
+                                <rex:compound extraction="6.0" id="otherPathway1" isInBRENDA="true" isInBranch="false" isInSeed="false" relevance="0.0">
+                                    <rex:alternativePathways>
+                                        <rex:pathway id="interestingPathway"/>
+                                    </rex:alternativePathways>
+                                    <rex:otherPathways/>
+                                </rex:compound>
+                            </rex:reactants>
+                            <rex:products>
+                                <rex:compound extraction="6.0" id="otherPathway2" isInBRENDA="true" isInBranch="false" isInSeed="false" relevance="0.0">
+                                    <rex:alternativePathways>
+                                        <rex:pathway id="interestingPathway"/>
+                                    </rex:alternativePathways>
+                                    <rex:otherPathways/>
+                                </rex:compound>
+                            </rex:products>
+                        </rex:components>
+                    </rex:rex>
+                </annotation>
+                <listOfReactants>
+                    <speciesReference species="otherPathway1" />
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="otherPathway2" />
+                </listOfProducts>
+            </reaction>
+            <reaction id="rex4">
+                <annotation>
+                    <rex:rex xmlns:rex="http://www.bbk.ac.uk/rex/">
+                        <rex:extracts>
+                        </rex:extracts>
+                        <rex:components>
+                            <rex:reactants>
+                                <rex:compound extraction="6.0" id="seed2" isInBRENDA="true" isInBranch="false" isInSeed="false" relevance="0.0">
+                                    <rex:alternativePathways/>
+                                    <rex:otherPathways/>
+                                </rex:compound>
+                            </rex:reactants>
+                            <rex:products>
+                                <rex:compound extraction="6.0" id="link1" isInBRENDA="true" isInBranch="false" isInSeed="false" relevance="0.0">
+                                    <rex:alternativePathways/>
+                                    <rex:otherPathways/>
+                                </rex:compound>
+                            </rex:products>
+                        </rex:components>
+                    </rex:rex>
+                </annotation>
+                <listOfReactants>
+                    <speciesReference species="seed2" />
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="link1" />
+                </listOfProducts>
+            </reaction>
+            <reaction id="rex5">
+                <annotation>
+                    <rex:rex xmlns:rex="http://www.bbk.ac.uk/rex/">
+                        <rex:extracts>
+                        </rex:extracts>
+                        <rex:components>
+                            <rex:reactants>
+                                <rex:compound extraction="6.0" id="link1" isInBRENDA="true" isInBranch="false" isInSeed="false" relevance="0.0">
+                                    <rex:alternativePathways/>
+                                    <rex:otherPathways/>
+                                </rex:compound>
+                            </rex:reactants>
+                            <rex:products>
+                                <rex:compound extraction="6.0" id="link2" isInBRENDA="true" isInBranch="false" isInSeed="false" relevance="0.0">
+                                    <rex:alternativePathways/>
+                                    <rex:otherPathways/>
+                                </rex:compound>
+                            </rex:products>
+                        </rex:components>
+                    </rex:rex>
+                </annotation>
+                <listOfReactants>
+                    <speciesReference species="link1" />
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="link2" />
+                </listOfProducts>
+            </reaction>
+            <reaction id="rex6">
+                <annotation>
+                    <rex:rex xmlns:rex="http://www.bbk.ac.uk/rex/">
+                        <rex:extracts>
+                        </rex:extracts>
+                        <rex:components>
+                            <rex:reactants>
+                                <rex:compound extraction="6.0" id="link2" isInBRENDA="true" isInBranch="false" isInSeed="false" relevance="0.0">
+                                    <rex:alternativePathways/>
+                                    <rex:otherPathways/>
+                                </rex:compound>
+                            </rex:reactants>
+                            <rex:products>
+                                <rex:compound extraction="6.0" id="otherPathway1" isInBRENDA="true" isInBranch="false" isInSeed="false" relevance="0.0">
+                                    <rex:alternativePathways/>
+                                    <rex:otherPathways/>
+                                </rex:compound>
+                            </rex:products>
+                        </rex:components>
+                    </rex:rex>
+                </annotation>
+                <listOfReactants>
+                    <speciesReference species="link2" />
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="otherPathway1" />
+                </listOfProducts>
+            </reaction>
+            <reaction id="rex7">
+                <annotation>
+                    <rex:rex xmlns:rex="http://www.bbk.ac.uk/rex/">
+                        <rex:extracts>
+                        </rex:extracts>
+                        <rex:components>
+                            <rex:reactants>
+                                <rex:compound extraction="6.0" id="seed3" isInBRENDA="true" isInBranch="false" isInSeed="false" relevance="0.0">
+                                    <rex:alternativePathways/>
+                                    <rex:otherPathways/>
+                                </rex:compound>
+                            </rex:reactants>
+                            <rex:products>
+                                <rex:compound extraction="6.0" id="other1" isInBRENDA="true" isInBranch="false" isInSeed="false" relevance="0.0">
+                                    <rex:alternativePathways/>
+                                    <rex:otherPathways/>
+                                </rex:compound>
+                            </rex:products>
+                        </rex:components>
+                    </rex:rex>
+                </annotation>
+                <listOfReactants>
+                    <speciesReference species="seed3" />
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="other1" />
+                </listOfProducts>
+            </reaction>
+            <reaction id="rex8">
+                <annotation>
+                    <rex:rex xmlns:rex="http://www.bbk.ac.uk/rex/">
+                        <rex:extracts>
+                        </rex:extracts>
+                        <rex:components>
+                            <rex:reactants>
+                                <rex:compound extraction="6.0" id="other1" isInBRENDA="true" isInBranch="false" isInSeed="false" relevance="0.0">
+                                    <rex:alternativePathways>
+                                        <rex:pathway id="boringPathway"/>
+                                    </rex:alternativePathways>
+                                    <rex:otherPathways/>
+                                </rex:compound>
+                            </rex:reactants>
+                            <rex:products>
+                                <rex:compound extraction="6.0" id="other2" isInBRENDA="true" isInBranch="false" isInSeed="false" relevance="0.0">
+                                    <rex:alternativePathways>
+                                        <rex:pathway id="boringPathway"/>
+                                    </rex:alternativePathways>
+                                    <rex:otherPathways/>
+                                </rex:compound>
+                            </rex:products>
+                        </rex:components>
+                    </rex:rex>
+                </annotation>
+                <listOfReactants>
+                    <speciesReference species="other1" />
+                </listOfReactants>
+                <listOfProducts>
+                    <speciesReference species="other2" />
+                </listOfProducts>
+            </reaction>
+        </listOfReactions>
+    </model>
+</sbml>

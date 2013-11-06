@@ -116,18 +116,31 @@ public class Pathway
         return inchis.contains(inchi);
     }
 
-    public Set<MetabolicReaction> getReactionsContainingMolecule(String molID)
+    public Set<MetabolicReaction> getReactionsContainingSubstrate(String molID)
     {
         Set<MetabolicReaction> output = new HashSet<MetabolicReaction>();
         if(substrateIndex.containsKey(molID))
         {
             output.addAll(substrateIndex.get(molID));
         }
+        return output;
+    }
 
+    public Set<MetabolicReaction> getReactionsContainingProduct(String molID)
+    {
+        Set<MetabolicReaction> output = new HashSet<MetabolicReaction>();
         if(productIndex.containsKey(molID))
         {
             output.addAll(productIndex.get(molID));
         }
+        return output;
+    }
+
+    public Set<MetabolicReaction> getReactionsContainingMolecule(String molID)
+    {
+        Set<MetabolicReaction> output = new HashSet<MetabolicReaction>();
+        output.addAll(getReactionsContainingSubstrate(molID));
+        output.addAll(getReactionsContainingProduct(molID));
 
         return output;
     }
