@@ -197,11 +197,11 @@ public class MultiplePubMedReader extends CollectionReader_ImplBase
      * @throws CollectionException
      */
 	@Override
-	public void getNext(CAS cas) throws IOException, CollectionException 
+	public void getNext(CAS cas) throws IOException, CollectionException
 	{
 		String pmid = pmids.get(count);
 		String content = "";
-		
+
 		if(documentDB.contains(pmid))
 		{
 			content = documentDB.get(pmid);
@@ -212,36 +212,34 @@ public class MultiplePubMedReader extends CollectionReader_ImplBase
 			try
 			{
 				pmArticle = new Article(pmid);
-			} 
+			}
 			catch (XPathExpressionException e)
 			{
 				throw new CollectionException(e);
-			} 
+			}
 			catch (ParserConfigurationException e)
 			{
 				throw new CollectionException(e);
-			} 
+			}
 			catch (SAXException e)
 			{
 				throw new CollectionException(e);
-			} 
+			}
 			catch (TransformerException e)
 			{
 				throw new CollectionException(e);
 			}
-			
-			//Retrieve the article text.
-			content = pmArticle.getFullText();
-			
-			//Just keep the Introduction.
-			/*
-			for(Pattern patt : patts)
-			{
-				Matcher mat = patt.matcher(content);
-				content = mat.replaceAll("");
-			}
-			*/
-			
+
+            //Retrieve the article text.
+            if(pmArticle.hasFullText())
+            {
+                content = pmArticle.getFullText();
+            }
+            else
+            {
+                content = pmArticle.getTitle() + " " + pmArticle.getAbstract();
+            }
+
 			documentDB.put(pmid, content);
 		}
 		

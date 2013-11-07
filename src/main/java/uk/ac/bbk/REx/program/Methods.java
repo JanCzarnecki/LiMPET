@@ -661,16 +661,6 @@ public class Methods
             {
                 cr.getNext(cas);
             }
-            catch(SocketTimeoutException e)
-            {
-                logStackTrace(e);
-                continue;
-            }
-            catch(ConnectException e)
-            {
-                logStackTrace(e);
-                continue;
-            }
             catch (CollectionException e)
             {
                 logStackTrace(e);
@@ -769,7 +759,6 @@ public class Methods
 
     private static void logStackTrace(Throwable e)
     {
-        Logger LOGGER = Logger.getLogger(Methods.class.getName());
         StringWriter sw = new StringWriter();
         e.printStackTrace(new PrintWriter(sw));
         LOGGER.log(Level.INFO, sw.toString());

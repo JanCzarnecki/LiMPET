@@ -78,7 +78,7 @@ public class ArticleTest
     {
         Article a = new Article("24086341");
 
-        assertEquals(143940, a.getWebContent().length());
+        assertEquals(149649, a.getWebContent().length());
     }
 
     @Test

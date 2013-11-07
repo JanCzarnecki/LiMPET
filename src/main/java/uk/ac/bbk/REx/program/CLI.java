@@ -406,11 +406,17 @@ public class CLI
         {
             Methods.clearCache();
         }
+        else
+        {
+            System.err.println("The mode was not recognised.");
+            LOGGER.log(Level.INFO, "Mode " + cmd.getOptionValue("m") + " not recognised.");
+            System.exit(1);
+            return;
+        }
     }
 
     private static void logStackTrace(Throwable e)
     {
-        Logger LOGGER = Logger.getLogger("uk.ac.bbk.REx.program.CLI");
         StringWriter sw = new StringWriter();
         e.printStackTrace(new PrintWriter(sw));
         LOGGER.log(Level.INFO, sw.toString());
