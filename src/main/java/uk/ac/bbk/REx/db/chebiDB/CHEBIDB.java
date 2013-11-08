@@ -40,7 +40,25 @@ public class CHEBIDB
 	
 	public CHEBIDB() throws CHEBIException
 	{
-		try 
+        try
+        {
+            //Not always necessary, but some Java installations require this line.
+            Class.forName("org.apache.derby.jdbc.EmbeddedDriver").newInstance();
+        }
+        catch (InstantiationException e)
+        {
+            throw new CHEBIException(e);
+        }
+        catch (IllegalAccessException e)
+        {
+            throw new CHEBIException(e);
+        }
+        catch (ClassNotFoundException e)
+        {
+            throw new CHEBIException(e);
+        }
+
+        try
 		{
 			con = DriverManager.getConnection("jdbc:derby:data/db/chebi;");
 		} 

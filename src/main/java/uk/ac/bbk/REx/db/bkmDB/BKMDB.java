@@ -31,6 +31,24 @@ public class BKMDB
     {
         try
         {
+            //Not always necessary, but some Java installations require this line.
+            Class.forName("org.apache.derby.jdbc.EmbeddedDriver").newInstance();
+        }
+        catch (InstantiationException e)
+        {
+            throw new BKMException(e);
+        }
+        catch (IllegalAccessException e)
+        {
+            throw new BKMException(e);
+        }
+        catch (ClassNotFoundException e)
+        {
+            throw new BKMException(e);
+        }
+
+        try
+        {
             con = DriverManager.getConnection("jdbc:derby:data/db/bkm;");
         }
         catch (SQLException e)
