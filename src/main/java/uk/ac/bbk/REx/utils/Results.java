@@ -1,7 +1,10 @@
 package uk.ac.bbk.REx.utils;
 
+import com.google.gson.*;
+import uk.ac.bbk.REx.program.Util;
 import uk.ac.ebi.mdk.domain.entity.reaction.MetabolicReaction;
 
+import java.lang.reflect.Type;
 import java.util.List;
 
 public class Results

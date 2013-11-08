@@ -2,6 +2,7 @@ package uk.ac.bbk.REx.program;
 
 import com.google.common.io.Files;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import org.apache.uima.UIMAFramework;
 import org.apache.uima.analysis_engine.AnalysisEngine;
@@ -312,7 +313,8 @@ public class Methods
         List<MetabolicReaction> reactions = Util.readInSBML(inputFile, System.err);
         List<MetabolicReaction> expectedReactions = Util.readInSBML(expectedFile, System.err);
 
-        Gson gson = new Gson();
+        GsonBuilder builder = new GsonBuilder();
+        Gson gson = builder.create();
         Type mapType = new TypeToken<Map<String, String>>(){}.getType();
         Map<String, String> currencyMoleculesMap = gson.fromJson(new InputStreamReader(
                 CLI.class.getResourceAsStream("/uk/ac/bbk/REx/settings/currencyMolecules.json")), mapType);
@@ -333,37 +335,16 @@ public class Methods
             return;
         }
 
-        String headerTemplate =
-                "Recall: %f\n" +
-                        "Precision %f\n\n";
-
-        String header = String.format(headerTemplate,
-                results.getRecall(),
-                results.getPrecision());
+        builder.registerTypeAdapter(MetabolicReaction.class, new MetabolicReactionSerializer());
+        builder.setPrettyPrinting();
+        gson = builder.create();
+        String output = gson.toJson(results);
 
         try
         {
-            writer.write(header);
-
-            writer.write("Reactions expected and found:\n");
-            for(MetabolicReaction reaction : results.getReactionsExpectedAndFound())
-            {
-                writer.write(Util.reactionToString(reaction) + "\n");
-            }
-
-            writer.write("\nReactions expected, but not found:\n");
-            for(MetabolicReaction reaction : results.getReactionsExpectedButNotFound())
-            {
-                writer.write(Util.reactionToString(reaction) + "\n");
-            }
-
-            writer.write("\nReactions found, but not expected:\n");
-            for(MetabolicReaction reaction : results.getReactionsFoundButNotExpected())
-            {
-                writer.write(Util.reactionToString(reaction) + "\n");
-            }
+            writer.write(output);
         }
-        catch(IOException e)
+        catch (IOException e)
         {
             System.err.println(String.format("The file %s could not be written to.", outputFile));
             logStackTrace(e);
