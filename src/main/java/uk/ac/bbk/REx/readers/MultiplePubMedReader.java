@@ -200,7 +200,7 @@ public class MultiplePubMedReader extends CollectionReader_ImplBase
 	public void getNext(CAS cas) throws IOException, CollectionException
 	{
 		String pmid = pmids.get(count);
-		String content = "";
+		String content = " ";
 
 		if(documentDB.contains(pmid))
 		{
@@ -208,39 +208,47 @@ public class MultiplePubMedReader extends CollectionReader_ImplBase
 		}
 		else
 		{
-			Article pmArticle;
-			try
-			{
-				pmArticle = new Article(pmid);
-			}
-			catch (XPathExpressionException e)
-			{
-				throw new CollectionException(e);
-			}
-			catch (ParserConfigurationException e)
-			{
-				throw new CollectionException(e);
-			}
-			catch (SAXException e)
-			{
-				throw new CollectionException(e);
-			}
-			catch (TransformerException e)
-			{
-				throw new CollectionException(e);
-			}
-
-            //Retrieve the article text.
-            if(pmArticle.hasFullText())
+            try
             {
-                content = pmArticle.getFullText();
-            }
-            else
-            {
-                content = pmArticle.getTitle() + " " + pmArticle.getAbstract();
-            }
+                Article pmArticle;
+                try
+                {
+                    pmArticle = new Article(pmid);
+                }
+                catch (XPathExpressionException e)
+                {
+                    throw new CollectionException(e);
+                }
+                catch (ParserConfigurationException e)
+                {
+                    throw new CollectionException(e);
+                }
+                catch (SAXException e)
+                {
+                    throw new CollectionException(e);
+                }
+                catch (TransformerException e)
+                {
+                    throw new CollectionException(e);
+                }
 
-			documentDB.put(pmid, content);
+                //Retrieve the article text.
+                if(pmArticle.hasFullText())
+                {
+                    content = pmArticle.getFullText();
+                }
+                else
+                {
+                    content = pmArticle.getTitle() + " " + pmArticle.getAbstract();
+                }
+
+                documentDB.put(pmid, content);
+            }
+            catch(Exception e)
+            {
+                //If getNext throws an exception, the cursor will not move to the next position.
+                //If any unexpected exception is thrown, the CAS is simply populated with an empty string.
+            }
 		}
 		
 		LOGGER.log(Level.FINE, "Recieved content: " + content);
