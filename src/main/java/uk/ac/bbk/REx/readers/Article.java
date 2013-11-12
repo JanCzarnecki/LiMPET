@@ -103,10 +103,13 @@ public class Article
             hasRunWebRetrieval = true;
             webPage = getArticleWebPage(getPMID());
 
-            webContent = null;
-            if(doesWebPageContainFullArticle(webPage))
+            if(webPage != null)
             {
-                webContent = getContentFromWebPage(webPage);
+                webContent = null;
+                if(doesWebPageContainFullArticle(webPage))
+                {
+                    webContent = getContentFromWebPage(webPage);
+                }
             }
         }
     }
@@ -117,7 +120,12 @@ public class Article
         {
             hasRunPDFRetrieval = true;
             webRetrieval();
-            pdfLink = getPDFLink(webPage);
+
+            if(webPage != null)
+            {
+                pdfLink = getPDFLink(webPage);
+            }
+
             if(pdfLink != null)
             {
                 pdfContent = getContentFromPDF(getPDFStream());
@@ -279,6 +287,19 @@ public class Article
         }
         cookie = sb.toString();
 
+        String cont = con.getContentType();
+
+        if(cont == null)
+        {
+            return null;
+        }
+        else if(cont.equals("application/pdf"))
+        {
+            pdfLink = url;
+            hasRunPDFRetrieval = true;
+            return null;
+        }
+
         org.jsoup.nodes.Document webPage = Jsoup.connect(url).timeout(20000).get();
 
         if(webPage.baseUri().substring(0, 19).equals("http://pubs.acs.org"))
@@ -306,12 +327,17 @@ public class Article
                     org.jsoup.nodes.Document nextWebPage = null;
                     try
                     {
-                        nextWebPage = Jsoup.connect(link.attr("abs:href")).timeout(20000).get();
                         LOGGER.log(Level.INFO, "Fetching: " + link.attr("abs:href"));
+                        nextWebPage = Jsoup.connect(link.attr("abs:href")).timeout(20000).get();
                     }
                     catch(IOException e)
                     {
                         LOGGER.log(Level.INFO, "Could not connect: " + link.attr("abs:href"));
+                        continue;
+                    }
+                    catch(IllegalArgumentException e)
+                    {
+                        LOGGER.log(Level.INFO, "Invalid URL: " + link.attr("abs:href"));
                         continue;
                     }
                     //Check if the linked page is big enough
