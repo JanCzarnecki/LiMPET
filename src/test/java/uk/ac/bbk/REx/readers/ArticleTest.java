@@ -73,6 +73,16 @@ public class ArticleTest
     }
 
     @Test
+    public void getPDFLinkRAMTest()
+            throws ParserConfigurationException, TransformerException, SAXException, XPathExpressionException, IOException
+    {
+        Article a = new Article("23560784");
+
+        assertEquals("http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=23560784&retmode=ref&" +
+                "cmd=prlinks", a.getPDFLink());
+    }
+
+    @Test
     public void getWebContentTest()
             throws ParserConfigurationException, TransformerException, SAXException, XPathExpressionException, IOException
     {
