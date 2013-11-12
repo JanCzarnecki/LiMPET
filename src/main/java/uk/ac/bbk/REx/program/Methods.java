@@ -314,6 +314,8 @@ public class Methods
         List<MetabolicReaction> expectedReactions = Util.readInSBML(expectedFile, System.err);
 
         GsonBuilder builder = new GsonBuilder();
+        builder.registerTypeAdapter(MetabolicReaction.class, new MetabolicReactionSerializer());
+        builder.setPrettyPrinting();
         Gson gson = builder.create();
         Type mapType = new TypeToken<Map<String, String>>(){}.getType();
         Map<String, String> currencyMoleculesMap = gson.fromJson(new InputStreamReader(
@@ -335,9 +337,6 @@ public class Methods
             return;
         }
 
-        builder.registerTypeAdapter(MetabolicReaction.class, new MetabolicReactionSerializer());
-        builder.setPrettyPrinting();
-        gson = builder.create();
         String output = gson.toJson(results);
 
         try
@@ -645,63 +644,71 @@ public class Methods
             catch (CollectionException e)
             {
                 logStackTrace(e);
-                continue;
+                System.exit(1);
             }
             catch (IOException e)
             {
                 logStackTrace(e);
+                System.exit(1);
+            }
+
+            try
+            {
+                try
+                {
+                    ae.process(cas);
+                }
+                catch (AnalysisEngineProcessException e)
+                {
+                    System.err.println("Error annotating document.");
+                    logStackTrace(e);
+                    System.exit(1);
+                }
+
+
+                try
+                {
+                    cases.add(cas.getJCas());
+                }
+                catch (CASException e)
+                {
+                    System.err.println("Error annotating document.");
+                    logStackTrace(e);
+                    System.exit(1);
+                }
+
+                double progress =
+                        ((double)cr.getProgress()[0].getCompleted() / (double)cr.getProgress()[0].getTotal()) * 100;
+                try
+                {
+                    hasNext = cr.hasNext();
+                }
+                catch (IOException e)
+                {
+                    System.err.println("Error retrieving PubMed documents.");
+                    logStackTrace(e);
+                    System.exit(1);
+                }
+                catch (CollectionException e)
+                {
+                    System.err.println("Error retrieving PubMed documents.");
+                    logStackTrace(e);
+                    System.exit(1);
+                }
+
+                if(hasNext)
+                {
+                    System.out.print("Progress: " + (int)Math.floor(progress) + "%\r");
+                }
+                else
+                {
+                    System.out.println("Progress: 100%");
+                }
+            }
+            catch(Exception e)
+            {
+                logStackTrace(e);
                 continue;
-            }
-
-            try
-            {
-                ae.process(cas);
-            }
-            catch (AnalysisEngineProcessException e)
-            {
-                System.err.println("Error annotating document.");
-                logStackTrace(e);
-                System.exit(1);
-            }
-
-
-            try
-            {
-                cases.add(cas.getJCas());
-            }
-            catch (CASException e)
-            {
-                System.err.println("Error annotating document.");
-                logStackTrace(e);
-                System.exit(1);
-            }
-
-            double progress =
-                    ((double)cr.getProgress()[0].getCompleted() / (double)cr.getProgress()[0].getTotal()) * 100;
-            try
-            {
-                hasNext = cr.hasNext();
-            }
-            catch (IOException e)
-            {
-                System.err.println("Error retrieving PubMed documents.");
-                logStackTrace(e);
-                System.exit(1);
-            }
-            catch (CollectionException e)
-            {
-                System.err.println("Error retrieving PubMed documents.");
-                logStackTrace(e);
-                System.exit(1);
-            }
-
-            if(hasNext)
-            {
-                System.out.print("Progress: " + (int)Math.floor(progress) + "%\r");
-            }
-            else
-            {
-                System.out.println("Progress: 100%");
             }
         }
 
