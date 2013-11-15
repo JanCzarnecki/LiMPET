@@ -210,10 +210,10 @@ public class MultiplePubMedReader extends CollectionReader_ImplBase
 		{
             try
             {
-                Article pmArticle;
+                PMCArticle pmArticle;
                 try
                 {
-                    pmArticle = new Article(pmid);
+                    pmArticle = new PMCArticle(pmid);
                 }
                 catch (XPathExpressionException e)
                 {
@@ -227,20 +227,9 @@ public class MultiplePubMedReader extends CollectionReader_ImplBase
                 {
                     throw new CollectionException(e);
                 }
-                catch (TransformerException e)
-                {
-                    throw new CollectionException(e);
-                }
 
                 //Retrieve the article text.
-                if(pmArticle.hasFullText())
-                {
-                    content = pmArticle.getFullText();
-                }
-                else
-                {
-                    content = pmArticle.getTitle() + " " + pmArticle.getAbstract();
-                }
+                content = pmArticle.getAvailableText();
 
                 documentDB.put(pmid, content);
             }
