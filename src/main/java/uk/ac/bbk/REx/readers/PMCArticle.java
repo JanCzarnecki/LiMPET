@@ -15,9 +15,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.logging.Logger;
 
 public class PMCArticle
 {
+    private final Logger LOGGER = Logger.getLogger(this.getClass().getName());
+
     private DocumentBuilder builder;
     private XPath xpath;
     private String pmid;
@@ -28,6 +31,7 @@ public class PMCArticle
 
     public PMCArticle(String pmid) throws ParserConfigurationException, IOException, SAXException, XPathExpressionException
     {
+        LOGGER.info("Attempting to find document with PubMed ID " + pmid + ".");
         builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         XPathFactory factory = XPathFactory.newInstance();
         xpath = factory.newXPath();
@@ -39,19 +43,23 @@ public class PMCArticle
         if(hasTitle(pubmedEFetchDoc))
         {
             title = getTitle(pubmedEFetchDoc);
+            LOGGER.info(String.format("Title of document %s found: %s", pmid, title));
         }
         else
         {
             title = null;
+            LOGGER.info(String.format("No title for document %s found.", pmid));
         }
 
         if(hasAbstract(pubmedEFetchDoc))
         {
             articleAbstract = getAbstract(pubmedEFetchDoc);
+            LOGGER.info(String.format("Abstract of document %s found: %s", pmid, articleAbstract));
         }
         else
         {
             articleAbstract = null;
+            LOGGER.info(String.format("No abstract for document %s found.", pmid));
         }
 
         Document eLinkDoc = getELinkDoc(pmid);
@@ -59,11 +67,18 @@ public class PMCArticle
         if(isInPMC(eLinkDoc))
         {
             pmcID = getPMCID(eLinkDoc);
+
+            LOGGER.info(String.format("Document %s found in PubMedCentral with ID %s.", pmid, pmcID));
+
             Document pmcEFetchDoc = getPMCEFetchDoc(pmcID);
             content = getContent(pmcEFetchDoc);
+            LOGGER.info(String.format("Content of document %s found.", pmid));
+            LOGGER.fine(String.format("Content of document %s: %s", pmid, content));
         }
         else
         {
+            LOGGER.info(String.format("Document %s not found in PubMedCentral.", pmid));
+
             pmcID = null;
             content = null;
         }
@@ -71,14 +86,21 @@ public class PMCArticle
 
     private Document getPubMedEFetchDoc(String pmid) throws IOException, SAXException
     {
-        URL efetchURL = new URL(
-                "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=xml&id=" + pmid);
+        String url = String.format("http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?" +
+                "db=pubmed&retmode=xml&id=%s", pmid);
+
+        LOGGER.info(String.format("Attempting to retrieve eFetch document from %s", url));
+
+        URL efetchURL = new URL(url);
         URLConnection con = efetchURL.openConnection();
         con.setConnectTimeout(20000);
         con.setReadTimeout(20000);
         InputStream is = new BufferedInputStream(con.getInputStream());
         Document doc = builder.parse(is);
         is.close();
+
+        LOGGER.info(String.format("eFetch document retrieved from %s", url));
+
         return doc;
     }
 
@@ -112,14 +134,21 @@ public class PMCArticle
 
     private Document getELinkDoc(String pmid) throws IOException, SAXException
     {
-        URL efetchURL = new URL(
-                "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&db=pmc&id=" + pmid);
+        String url = String.format("http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?" +
+                "dbfrom=pubmed&db=pmc&id=%s", pmid);
+
+        LOGGER.info(String.format("Attempting to retrieve eLink document from %s", url));
+
+        URL efetchURL = new URL(url);
         URLConnection con = efetchURL.openConnection();
         con.setConnectTimeout(20000);
         con.setReadTimeout(20000);
         InputStream is = new BufferedInputStream(con.getInputStream());
         Document doc = builder.parse(is);
         is.close();
+
+        LOGGER.info(String.format("eLink document retrieved from %s", url));
+
         return doc;
     }
 
@@ -144,14 +173,21 @@ public class PMCArticle
 
     private Document getPMCEFetchDoc(String pmcid) throws IOException, SAXException
     {
-        URL efetchURL = new URL(
-                "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=" + pmcID);
+        String url = String.format("http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?" +
+                "db=pmc&id=%s", pmcid);
+
+        LOGGER.info(String.format("Attempting to retrieve eFetch document from %s", url));
+
+        URL efetchURL = new URL(url);
         URLConnection con = efetchURL.openConnection();
         con.setConnectTimeout(20000);
         con.setReadTimeout(20000);
         InputStream is = new BufferedInputStream(con.getInputStream());
         Document doc = builder.parse(is);
         is.close();
+
+        LOGGER.info(String.format("eFetch document retrieved from %s", url));
+
         return doc;
     }
 
