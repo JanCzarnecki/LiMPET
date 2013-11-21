@@ -511,7 +511,7 @@ public class Methods
 
         //Initialise the PubMed reader
         XMLInputSource reader = new XMLInputSource(
-                CLI.class.getResourceAsStream("/uk/ac/bbk/REx/desc/MultiplePubMedReader.xml"), null);
+                CLI.class.getResourceAsStream("/uk/ac/bbk/REx/desc/PubMedReader.xml"), null);
         CollectionReaderDescription crDesc = null;
         try
         {
