@@ -1,5 +1,6 @@
 package uk.ac.bbk.REx.readers;
 
+import org.apache.pdfbox.pdmodel.PDDocument;
 import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.SAXException;
