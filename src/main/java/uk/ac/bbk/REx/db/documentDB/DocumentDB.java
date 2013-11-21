@@ -111,4 +111,9 @@ public class DocumentDB
 			throw new IOException(e);
 		}
 	}
+
+    public void close() throws SQLException
+    {
+        con.close();
+    }
 }
