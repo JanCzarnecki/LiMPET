@@ -376,11 +376,11 @@ public class CompoundAnnotator
             Map<String, Boolean> substrateIsInSeed = new HashMap<String, Boolean>();
             Map<String, Boolean> productIsInSeed = new HashMap<String, Boolean>();
 
-            Set<String> substrateAlternativePathways = new HashSet<String>();
-            Set<String> productAlternativePathways = new HashSet<String>();
+            Map<String, String> substrateAlternativePathways = new HashMap<String, String>();
+            Map<String, String> productAlternativePathways = new HashMap<String, String>();
 
-            Set<String> substrateOtherPathways = new HashSet<String>();
-            Set<String> productOtherPathways = new HashSet<String>();
+            Map<String, String> substrateOtherPathways = new HashMap<String, String>();
+            Map<String, String> productOtherPathways = new HashMap<String, String>();
 
             for(MetabolicParticipant substrate : reaction.getReactants())
             {
@@ -454,13 +454,13 @@ public class CompoundAnnotator
 
                             if(alternative)
                             {
-                                substrateAlternativePathways.add(pathwayFound);
-                                productAlternativePathways.add(pathwayFound);
+                                substrateAlternativePathways.put(pathwayFound, bkmDB.getPathwayName(pathwayFound));
+                                productAlternativePathways.put(pathwayFound, bkmDB.getPathwayName(pathwayFound));
                             }
                             else
                             {
-                                substrateOtherPathways.add(pathwayFound);
-                                productOtherPathways.add(pathwayFound);
+                                substrateOtherPathways.put(pathwayFound, bkmDB.getPathwayName(pathwayFound));
+                                productOtherPathways.put(pathwayFound, bkmDB.getPathwayName(pathwayFound));
                             }
                         }
                     }
@@ -513,8 +513,8 @@ public class CompoundAnnotator
                         substrateIsInBRENDABool,
                         substrateIsInSeedBool,
                         isInBranch,
-                        new ArrayList<String>(substrateAlternativePathways),
-                        new ArrayList<String>(substrateOtherPathways),
+                        substrateAlternativePathways,
+                        substrateOtherPathways,
                         extraction,
                         0);
                 reaction.addAnnotation(compound);
@@ -566,8 +566,8 @@ public class CompoundAnnotator
                         productIsInBRENDABool,
                         productIsInSeedBool,
                         isInBranch,
-                        new ArrayList<String>(productAlternativePathways),
-                        new ArrayList<String>(productOtherPathways),
+                        productAlternativePathways,
+                        productOtherPathways,
                         extraction,
                         0);
                 reaction.addAnnotation(compound);
@@ -644,6 +644,14 @@ public class CompoundAnnotator
             nextReactions.removeAll(seenReactions);
         }
 
+        for(MetabolicReaction reaction : reactions)
+        {
+            for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
+            {
+                compound.setRelevance(0.0);
+            }
+        }
+
         for(MetabolicReaction reaction : totalSeedReactionsInSources.keySet())
         {
             for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
@@ -691,8 +699,8 @@ public class CompoundAnnotator
             Set<String> pathwaysFound  = new HashSet<String>();
             for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
             {
-                pathwaysFound.addAll(compound.getAlternativePathways());
-                pathwaysFound.addAll(compound.getOtherPathways());
+                pathwaysFound.addAll(compound.getAlternativePathways().keySet());
+                pathwaysFound.addAll(compound.getOtherPathways().keySet());
 
                 if(compound.isInSeed())
                 {
