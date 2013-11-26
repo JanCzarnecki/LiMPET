@@ -33,8 +33,6 @@ import uk.ac.ebi.mdk.domain.entity.reaction.MetabolicReaction;
 
 import java.io.*;
 import java.lang.reflect.Type;
-import java.net.ConnectException;
-import java.net.SocketTimeoutException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -402,6 +400,13 @@ public class Methods
                                                            InputStream queriesStream,
                                                            String pmidCutOffs)
     {
+
+        Gson gson = new Gson();
+        Type mapType = new TypeToken<Map<String, String>>(){}.getType();
+        Map<String, String> currencyMoleculesMap = gson.fromJson(new InputStreamReader(
+                CLI.class.getResourceAsStream("/uk/ac/bbk/REx/settings/currencyMolecules.json")), mapType);
+        Set<String> currencyMolecules = new HashSet<String>(currencyMoleculesMap.values());
+
         Pathway seed = null;
         seed = new Pathway(seedReactions);
         Set<String> queries;
@@ -486,7 +491,7 @@ public class Methods
         {
             try
             {
-                queries = seed.constructQueries(speciesID);
+                queries = seed.constructQueries(speciesID, currencyMolecules);
             }
             catch (CHEBIException e)
             {
@@ -506,7 +511,6 @@ public class Methods
             }
         }
 
-        Gson gson = new Gson();
         String queriesJSON = gson.toJson(queries);
 
         //Initialise the PubMed reader
@@ -597,10 +601,6 @@ public class Methods
 
         System.out.println("Extracting reactions from articles.");
 
-        Type mapType = new TypeToken<Map<String, String>>(){}.getType();
-        Map<String, String> currencyMoleculesMap = gson.fromJson(new InputStreamReader(
-                CLI.class.getResourceAsStream("/uk/ac/bbk/REx/settings/currencyMolecules.json")), mapType);
-        Set<String> currencyMolecules = new HashSet<String>(currencyMoleculesMap.values());
         List<JCas> cases = new ArrayList<JCas>();
 
         boolean hasNext = false;
