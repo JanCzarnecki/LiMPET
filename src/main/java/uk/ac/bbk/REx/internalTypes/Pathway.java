@@ -191,10 +191,13 @@ public class Pathway
         return output;
     }
 	
-	public Set<String> constructQueries(String organismID) throws CHEBIException, FileNotFoundException
+	public Set<String> constructQueries(String organismID, Set<String> currencyMols) throws CHEBIException, FileNotFoundException
     {
+        Set<String> noCurrencyInchis = new HashSet<String>(inchis);
+        noCurrencyInchis.removeAll(currencyMols);
+
 		QueryBuilder qb = new QueryBuilder();
-		return qb.build(organismID, inchis);
+		return qb.build(organismID, noCurrencyInchis);
 	}
 	
 	public boolean containsPair(String substrateInchi, String productInchi)
