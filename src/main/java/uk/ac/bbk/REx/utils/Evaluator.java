@@ -1,5 +1,6 @@
 package uk.ac.bbk.REx.utils;
 
+import uk.ac.bbk.REx.program.Util;
 import uk.ac.ebi.mdk.domain.annotation.InChI;
 import uk.ac.ebi.mdk.domain.annotation.rex.RExCompound;
 import uk.ac.ebi.mdk.domain.entity.Metabolite;
@@ -142,8 +143,8 @@ public class Evaluator
         }
 
         int foundReactions = 0;
-        List<MetabolicReaction> expectedReactionsFound = new ArrayList<MetabolicReaction>();
-        List<MetabolicReaction> foundReactionsExpected = new ArrayList<MetabolicReaction>();
+        Set<MetabolicReaction> expectedReactionsFound = new HashSet<MetabolicReaction>();
+        Set<MetabolicReaction> foundReactionsExpected = new HashSet<MetabolicReaction>();
 
         START:
         for(MetabolicReaction expectedReaction : expectedReactions)
@@ -242,6 +243,7 @@ public class Evaluator
                         }
                     }
 
+                    int successes = 0;
                     for(MetabolicParticipant product : expectedReaction.getProducts())
                     {
                         Metabolite pm = product.getMolecule();
@@ -253,16 +255,20 @@ public class Evaluator
                             {
                                 Set<MetabolicReaction> productReactions = productCutOffIndex.get(inchi.toInChI());
                                 commonReactions.retainAll(productReactions);
+                                successes++;
                             }
                         }
                     }
 
-                    if(!commonReactions.isEmpty())
+                    if(successes > 0)
                     {
-                        foundReactions++;
-                        foundReactionsExpected.addAll(commonReactions);
-                        expectedReactionsFound.add(expectedReaction);
-                        continue START;
+                        if(!commonReactions.isEmpty())
+                        {
+                            foundReactions++;
+                            foundReactionsExpected.addAll(commonReactions);
+                            expectedReactionsFound.add(expectedReaction);
+                            continue START;
+                        }
                     }
                 }
             }
@@ -281,6 +287,7 @@ public class Evaluator
                         }
                     }
 
+                    int successes = 0;
                     for(MetabolicParticipant substrate : expectedReaction.getReactants())
                     {
                         Metabolite sm = substrate.getMolecule();
@@ -292,16 +299,20 @@ public class Evaluator
                             {
                                 Set<MetabolicReaction> substrateReactions = substrateCutOffIndex.get(inchi.toInChI());
                                 commonReactions.retainAll(substrateReactions);
+                                successes++;
                             }
                         }
                     }
 
-                    if(!commonReactions.isEmpty())
+                    if(successes > 0)
                     {
-                        foundReactions++;
-                        foundReactionsExpected.addAll(commonReactions);
-                        expectedReactionsFound.add(expectedReaction);
-                        continue START;
+                        if(!commonReactions.isEmpty())
+                        {
+                            foundReactions++;
+                            foundReactionsExpected.addAll(commonReactions);
+                            expectedReactionsFound.add(expectedReaction);
+                            continue START;
+                        }
                     }
                 }
             }
@@ -333,6 +344,7 @@ public class Evaluator
                     }
                 }
 
+                int successes = 0;
                 for(MetabolicParticipant product : expectedReaction.getProducts())
                 {
                     Metabolite m = product.getMolecule();
@@ -344,16 +356,20 @@ public class Evaluator
                         {
                             Set<MetabolicReaction> productReactions = productCutOffIndex.get(inchi.toInChI());
                             commonReactions.retainAll(productReactions);
+                            successes++;
                         }
                     }
                 }
 
-                if(!commonReactions.isEmpty())
+                if(successes > 0)
                 {
-                    foundReactions++;
-                    foundReactionsExpected.addAll(commonReactions);
-                    expectedReactionsFound.add(expectedReaction);
-                    continue START;
+                    if(!commonReactions.isEmpty())
+                    {
+                        foundReactions++;
+                        foundReactionsExpected.addAll(commonReactions);
+                        expectedReactionsFound.add(expectedReaction);
+                        continue START;
+                    }
                 }
             }
         }
@@ -365,11 +381,20 @@ public class Evaluator
         reactionsFoundButNotExpected.removeAll(foundReactionsExpected);
 
         double recall = (double)foundReactions/(double)expectedReactions.size();
-        double precision = (double)foundReactions/(double)totalReactionsAboveCutoff;
+        double precision;
+        if(totalReactionsAboveCutoff == 0)
+        {
+            precision = 0;
+        }
+        else
+        {
+            precision = (double)foundReactions/(double)totalReactionsAboveCutoff;
+        }
+
         return new Results(
                 recall,
                 precision,
-                foundReactionsExpected,
+                new ArrayList<MetabolicReaction>(foundReactionsExpected),
                 new ArrayList<MetabolicReaction>(reactionsExpectedButNotFound),
                 new ArrayList<MetabolicReaction>(reactionsFoundButNotExpected));
     }
