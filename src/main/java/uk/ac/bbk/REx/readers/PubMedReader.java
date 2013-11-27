@@ -158,6 +158,7 @@ public class PubMedReader extends CollectionReader_ImplBase
                         "with the following POST parameters: %s", esearchURLString, params));
 
                 doc = builder.parse(stream);
+                stream.close();
             }
             catch(IOException e)
             {
