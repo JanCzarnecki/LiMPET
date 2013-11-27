@@ -248,6 +248,7 @@ public class PubMedDownloader
                 url, params));
 
         Document doc = builder.parse(stream);
+        stream.close();
         return doc;
     }
 
