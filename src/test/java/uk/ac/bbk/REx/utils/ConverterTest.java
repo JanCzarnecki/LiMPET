@@ -1,10 +1,17 @@
 package uk.ac.bbk.REx.utils;
 
+import org.apache.uima.UIMAFramework;
+import org.apache.uima.analysis_engine.AnalysisEngine;
+import org.apache.uima.analysis_engine.AnalysisEngineDescription;
 import org.apache.uima.cas.CASException;
+import org.apache.uima.cas.impl.Serialization;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.resource.ResourceInitializationException;
+import org.apache.uima.resource.metadata.ConfigurationParameterSettings;
 import org.apache.uima.util.InvalidXMLException;
+import org.apache.uima.util.XMLInputSource;
 import org.junit.Test;
+import uk.ac.bbk.REx.program.CLI;
 import uk.ac.bbk.REx.test.TestCASGenerator;
 import uk.ac.ebi.mdk.domain.annotation.rex.RExExtract;
 import uk.ac.ebi.mdk.domain.entity.Metabolite;
@@ -13,9 +20,7 @@ import uk.ac.ebi.mdk.domain.entity.reaction.MetabolicParticipant;
 import uk.ac.ebi.mdk.domain.entity.reaction.MetabolicReaction;
 
 import javax.xml.stream.XMLStreamException;
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -43,11 +48,22 @@ public class ConverterTest
             CASException, ResourceInitializationException, InvalidXMLException, IOException
     {
         JCas jcas = TestCASGenerator.generateTestJCas();
-        List<JCas> cases = new ArrayList<JCas>();
-        cases.add(jcas);
+        File tempFile = new File(System.getProperty("java.io.tmpdir") + "/rexTest.ser");
+        tempFile.deleteOnExit();
+
+        OutputStream out = new BufferedOutputStream(new FileOutputStream(tempFile));
+        Serialization.serializeCAS(jcas.getCas(), out);
+        out.close();
+
+        XMLInputSource in = new XMLInputSource(
+                CLI.class.getResourceAsStream("/uk/ac/bbk/REx/desc/RExAnnotator.xml"), null);
+        AnalysisEngineDescription aeDesc = UIMAFramework.getXMLParser().parseAnalysisEngineDescription(in);
+        ConfigurationParameterSettings aeParams = aeDesc.getMetaData().getConfigurationParameterSettings();
+        aeParams.setParameterValue("organism", "111");
+        AnalysisEngine ae = UIMAFramework.produceAnalysisEngine(aeDesc);
 
         List<BiochemicalReaction> reactions = Converter.convertUIMAReactionsToMDK(
-                cases, new ArrayList<String>(), "562", new ArrayList<Metabolite>());
+                new File[]{tempFile}, ae, new ArrayList<String>(), "562", new ArrayList<Metabolite>());
         List<String> results = new ArrayList<String>();
 
         MetabolicReaction reaction = reactions.get(0);

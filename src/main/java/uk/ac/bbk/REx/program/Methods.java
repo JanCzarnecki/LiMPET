@@ -10,6 +10,7 @@ import org.apache.uima.analysis_engine.AnalysisEngineDescription;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.cas.CAS;
 import org.apache.uima.cas.CASException;
+import org.apache.uima.cas.impl.Serialization;
 import org.apache.uima.collection.CollectionException;
 import org.apache.uima.collection.CollectionReader;
 import org.apache.uima.collection.CollectionReaderDescription;
@@ -23,6 +24,7 @@ import uk.ac.bbk.REx.db.documentDB.DocumentDB;
 import uk.ac.bbk.REx.exception.BKMException;
 import uk.ac.bbk.REx.exception.CHEBIException;
 import uk.ac.bbk.REx.internalTypes.Pathway;
+import uk.ac.bbk.REx.types.Document;
 import uk.ac.bbk.REx.utils.*;
 import uk.ac.ebi.mdk.domain.annotation.rex.RExCompound;
 import uk.ac.ebi.mdk.domain.annotation.rex.RExExtract;
@@ -601,8 +603,6 @@ public class Methods
 
         System.out.println("Extracting reactions from articles.");
 
-        List<JCas> cases = new ArrayList<JCas>();
-
         boolean hasNext = false;
         try
         {
@@ -620,6 +620,10 @@ public class Methods
             logStackTrace(e);
             System.exit(1);
         }
+
+        File tempDir = new File(System.getProperty("java.io.tmpdir") + "/rex/");
+        tempDir.mkdir();
+        tempDir.deleteOnExit();
 
         //Loop through each CAS in the reader.
         while(hasNext)
@@ -665,14 +669,19 @@ public class Methods
                     System.exit(1);
                 }
 
-
                 try
                 {
-                    cases.add(cas.getJCas());
+                    String pmid = JCasUtils.getPubMedID(cas.getJCas());
+                    File tempFile = new File(tempDir.getAbsolutePath() + "/" + pmid + ".ser");
+                    tempFile.deleteOnExit();
+                    OutputStream out = new BufferedOutputStream(
+                            new FileOutputStream(tempFile));
+                    Serialization.serializeCAS(cas, out);
+                    out.close();
                 }
-                catch (CASException e)
+                catch(IOException e)
                 {
-                    System.err.println("Error annotating document.");
+                    System.err.println("Error storing annotated documents.");
                     logStackTrace(e);
                     System.exit(1);
                 }
@@ -714,8 +723,31 @@ public class Methods
 
         cr.destroy();
 
-        List<BiochemicalReaction> mdkReactions = Converter.convertUIMAReactionsToMDK(cases, sections, speciesID,
-                seed.getMetabolites(currencyMolecules));
+        List<BiochemicalReaction> mdkReactions = null;
+        try
+        {
+            mdkReactions = Converter.convertUIMAReactionsToMDK(tempDir.listFiles(), ae, sections, speciesID,
+                    seed.getMetabolites(currencyMolecules));
+        }
+        catch (IOException e)
+        {
+            System.err.println("Can't find temp directory.");
+            logStackTrace(e);
+            System.exit(1);
+        }
+        catch (ResourceInitializationException e)
+        {
+            System.err.println("Error reading annotations.");
+            logStackTrace(e);
+            System.exit(1);
+        }
+        catch (CASException e)
+        {
+            System.err.println("Error reading annotations.");
+            logStackTrace(e);
+            System.exit(1);
+        }
+
         EntityFactory entityFactory = DefaultEntityFactory.getInstance();
 
         List<MetabolicReaction> combinedReactions = ReactionCombiner.combineReactions(

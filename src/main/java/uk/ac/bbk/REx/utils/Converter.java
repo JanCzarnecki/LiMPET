@@ -1,13 +1,18 @@
 package uk.ac.bbk.REx.utils;
 
-import java.io.InputStream;
+import java.io.*;
 import java.util.*;
 import javax.xml.stream.XMLStreamException;
 
 import hu.u_szeged.rgai.bio.uima.tagger.LinnaeusSpecies;
+import org.apache.uima.analysis_engine.AnalysisEngine;
+import org.apache.uima.cas.CAS;
+import org.apache.uima.cas.CASException;
+import org.apache.uima.cas.impl.Serialization;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.tcas.Annotation;
 
+import org.apache.uima.resource.ResourceInitializationException;
 import uk.ac.bbk.REx.types.Document;
 import uk.ac.bbk.REx.types.Section;
 import uk.ac.ebi.mdk.domain.annotation.InChI;
@@ -28,34 +33,39 @@ public class Converter
     /**
      * Converts reaction annotations contained in a collection of CAS's to MDK reactions.
      *
-     * @param cases A collection of CAS's containing reaction annotations.
      * @param sectionsToIgnore
      * @param speciesID The NCBI Taxonomy ID used in the extraction of reactions.
      * @return
      */
     public static List<BiochemicalReaction> convertUIMAReactionsToMDK(
-            Collection<JCas> cases, Collection<String> sectionsToIgnore, String speciesID,
-            Collection<Metabolite> seedMetabolites)
+            File[] casFiles, AnalysisEngine ae, Collection<String> sectionsToIgnore, String speciesID,
+            Collection<Metabolite> seedMetabolites) throws IOException, ResourceInitializationException, CASException
     {
         EntityFactory entityFactory = DefaultEntityFactory.getInstance();
         List<BiochemicalReaction> output = new ArrayList<BiochemicalReaction>();
         Map<String, Metabolite> metabolites = new HashMap<String, Metabolite>();
 
-        for(JCas cas : cases)
+        for(File casFile : casFiles)
         {
+            InputStream in = new BufferedInputStream(new FileInputStream(casFile));
+            CAS cas = ae.newCAS();
+            Serialization.deserializeCAS(cas, in);
+            in.close();
+            JCas jcas = cas.getJCas();
+
             String pmid = null;
-            for(Annotation docAnnotation : cas.getAnnotationIndex(Document.type))
+            for(Annotation docAnnotation : jcas.getAnnotationIndex(Document.type))
             {
                 Document doc = (Document)docAnnotation;
                 pmid = doc.getId();
             }
 
             //Find seed metabolites in document.
-            List<Metabolite> seedMetabolitesFound = JCasUtils.metabolitesInCAS(seedMetabolites, cas);
+            List<Metabolite> seedMetabolitesFound = JCasUtils.metabolitesInCAS(seedMetabolites, jcas);
 
-            CharacterIndex<Section> sectionIndex = new CharacterIndex<Section>(cas, Section.type);
+            CharacterIndex<Section> sectionIndex = new CharacterIndex<Section>(jcas, Section.type);
 
-            for(Annotation reactionAnnotation : cas.getAnnotationIndex(uk.ac.bbk.REx.types.Reaction.type))
+            for(Annotation reactionAnnotation : jcas.getAnnotationIndex(uk.ac.bbk.REx.types.Reaction.type))
             {
                 uk.ac.bbk.REx.types.Reaction uimaReaction = (uk.ac.bbk.REx.types.Reaction)reactionAnnotation;
 
