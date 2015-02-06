@@ -4,4 +4,6 @@
 .classpath
 .project
 derby.log
-REx.iml
+REx.iml/debug.txt
+/REx.iml
+/debug.txt
