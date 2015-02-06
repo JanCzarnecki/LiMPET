@@ -1,9 +1,6 @@
 package uk.ac.bbk.REx.utils;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.*;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -15,10 +12,14 @@ import uk.ac.bbk.REx.exception.CHEBIException;
 public class QueryBuilder 
 {
 	private CHEBIDB chebiDB;
+    private Pattern unwantedLayers;
+    File data;
 	
-	public QueryBuilder() throws CHEBIException
-	{
-		chebiDB = new CHEBIDB();
+	public QueryBuilder(File data) throws CHEBIException, UnsupportedEncodingException
+    {
+        this.data = data;
+		chebiDB = new CHEBIDB(data);
+        unwantedLayers = Pattern.compile("/[pqbtmsifr].+");
 	}
 
     /**
@@ -30,10 +31,11 @@ public class QueryBuilder
      * @throws CHEBIException
      * @throws FileNotFoundException
      */
-	public Set<String> build(String speciesID, Collection<String> inchis) throws CHEBIException, FileNotFoundException
+	public Set<String> build(String speciesID, Collection<String> extraNames, Set<String> inchis, Set<String> currencyMols) throws CHEBIException, FileNotFoundException, UnsupportedEncodingException
     {
         List<String> organismNames = new ArrayList<String>();
-        Scanner sc = new Scanner(new BufferedReader(new FileReader(new File("data/species-light.tsv"))));
+        File parent = Files.getParentDirectory();
+        Scanner sc = new Scanner(new BufferedReader(new FileReader(new File(data, "species-light.tsv"))));
         Pattern idPatt = Pattern.compile("species:ncbi:" + speciesID + "\\t(.*)");
         while(sc.hasNextLine())
         {
@@ -43,9 +45,11 @@ public class QueryBuilder
             {
                 String namesString = idMat.group(1);
                 String[] namesArray = namesString.split("\\|");
-                organismNames = Arrays.asList(namesArray);
+                organismNames = new ArrayList<String>(Arrays.asList(namesArray));
             }
         }
+
+        organismNames.addAll(new ArrayList<String>(extraNames));
 
 		Set<String> queries = new HashSet<String>();
 		StringBuilder organismQuery = new StringBuilder("(");
@@ -53,26 +57,25 @@ public class QueryBuilder
         for(String organismName : organismNames)
         {
             count++;
-
-            //So that eUtils doesn't throw an Error 414.
-            if(organismQuery.length() + organismName.length() <= 3000)
+            if(count > 1)
             {
-                if(count > 1)
-                {
-                    organismQuery.append(" OR ");
-                }
+                organismQuery.append(" OR ");
+            }
 
-                organismQuery.append("(" + organismName + ")");
-            }
-            else
-            {
-                break;
-            }
+            organismName = organismName.replaceAll("\\(", "");
+            organismName = organismName.replaceAll("\\)", "");
+            organismQuery.append("(\"" + organismName + "\"[All Fields])");
         }
         organismQuery.append(")");
 		
 		for(String inchi : inchis)
 		{
+            Matcher unwantedLayersMat = unwantedLayers.matcher(inchi);
+            inchi = unwantedLayersMat.replaceAll("");
+            if(currencyMols.contains(inchi))
+            {
+                continue;
+            }
             Set<Integer> ids = null;
             try
             {
@@ -110,7 +113,7 @@ public class QueryBuilder
 
                     name = name.replaceAll("\\(", "");
                     name = name.replaceAll("\\)", "");
-                    chemicalQuery.append("(" + name + ")");
+                    chemicalQuery.append("(\"" + name + "\"[All Fields])");
                 }
                 else
                 {

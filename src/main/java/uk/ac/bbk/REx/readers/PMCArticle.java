@@ -28,7 +28,10 @@ public class PMCArticle
     private String title;
     private String articleAbstract;
     private String pmcID;
-    private String content;
+    private String body;
+
+    private Document pubmedEFetchDoc;
+    private Document pmcEFetchDoc;
 
     public PMCArticle(String pmid) throws ParserConfigurationException, IOException, SAXException, XPathExpressionException
     {
@@ -39,7 +42,7 @@ public class PMCArticle
 
         this.pmid = pmid;
 
-        Document pubmedEFetchDoc = getPubMedEFetchDoc(pmid);
+        pubmedEFetchDoc = getPubMedEFetchDoc(pmid);
 
         if(hasTitle(pubmedEFetchDoc))
         {
@@ -71,17 +74,21 @@ public class PMCArticle
 
             LOGGER.info(String.format("Document %s found in PubMedCentral with ID %s.", pmid, pmcID));
 
-            Document pmcEFetchDoc = getPMCEFetchDoc(pmcID);
-            content = getContent(pmcEFetchDoc);
-            LOGGER.info(String.format("Content of document %s found.", pmid));
-            LOGGER.fine(String.format("Content of document %s: %s", pmid, content));
+            pmcEFetchDoc = getPMCEFetchDoc(pmcID);
+
+            if(hasBody(pmcEFetchDoc))
+            {
+                body = getBody(pmcEFetchDoc);
+                LOGGER.info(String.format("Content of document %s found.", pmid));
+                LOGGER.fine(String.format("Content of document %s: %s", pmid, body));
+            }
         }
         else
         {
             LOGGER.info(String.format("Document %s not found in PubMedCentral.", pmid));
 
             pmcID = null;
-            content = null;
+            body = null;
         }
     }
 
@@ -107,30 +114,30 @@ public class PMCArticle
 
     private boolean hasTitle(Document pubmedEFetchDoc) throws XPathExpressionException
     {
-        XPathExpression titleBoolExp = xpath.compile("boolean(//ArticleTitle/text())");
+        XPathExpression titleBoolExp = xpath.compile("boolean(//ArticleTitle)");
         String titleBool = (String)titleBoolExp.evaluate(pubmedEFetchDoc, XPathConstants.STRING);
         return Boolean.parseBoolean(titleBool);
     }
 
     private String getTitle(Document pubmedEFetchDoc) throws XPathExpressionException
     {
-        XPathExpression titleExp = xpath.compile("//ArticleTitle/text()");
+        XPathExpression titleExp = xpath.compile("//ArticleTitle");
         Node titleNode = (Node)titleExp.evaluate(pubmedEFetchDoc, XPathConstants.NODE);
-        return titleNode.getNodeValue();
+        return titleNode.getTextContent();
     }
 
     private boolean hasAbstract(Document pubmedEFetchDoc) throws XPathExpressionException
     {
-        XPathExpression abstractBoolExp = xpath.compile("boolean(//AbstractText/text())");
+        XPathExpression abstractBoolExp = xpath.compile("boolean(//AbstractText)");
         String abstractBool = (String)abstractBoolExp.evaluate(pubmedEFetchDoc, XPathConstants.STRING);
         return Boolean.parseBoolean(abstractBool);
     }
 
     private String getAbstract(Document pubmedEFetchDoc) throws XPathExpressionException
     {
-        XPathExpression abstractExp = xpath.compile("//AbstractText/text()");
+        XPathExpression abstractExp = xpath.compile("//AbstractText");
         Node abstractNode = (Node)abstractExp.evaluate(pubmedEFetchDoc, XPathConstants.NODE);
-        return abstractNode.getNodeValue();
+        return abstractNode.getTextContent();
     }
 
     private Document getELinkDoc(String pmid) throws IOException, SAXException
@@ -192,7 +199,15 @@ public class PMCArticle
         return doc;
     }
 
-    private String getContent(Document pmcEFetchDoc) throws XPathExpressionException
+    private boolean hasBody(Document pmcEFetchDoc) throws XPathExpressionException
+    {
+        XPathExpression bodyBoolExp = xpath.compile("boolean(//body)");
+        Boolean hasBody = (Boolean)bodyBoolExp.evaluate(pmcEFetchDoc, XPathConstants.BOOLEAN);
+
+        return hasBody;
+    }
+
+    private String getBody(Document pmcEFetchDoc) throws XPathExpressionException
     {
         XPathExpression bodyExp = xpath.compile("//body");
         Node bodyNode = (Node)bodyExp.evaluate(pmcEFetchDoc, XPathConstants.NODE);
@@ -250,19 +265,19 @@ public class PMCArticle
         return pmcID;
     }
 
-    public boolean hasContent()
+    public boolean hasBody()
     {
-        boolean hasContent = false;
-        if(content != null)
+        boolean hasBody = false;
+        if(body != null)
         {
-            hasContent = true;
+            hasBody = true;
         }
-        return hasContent;
+        return hasBody;
     }
 
-    public String getContent()
+    public String getBody()
     {
-        return content;
+        return body;
     }
 
     public String getAvailableText()
@@ -279,11 +294,21 @@ public class PMCArticle
             text.append(getAbstract() + " ");
         }
 
-        if(hasContent())
+        if(hasBody())
         {
-            text.append(getContent());
+            text.append(getBody());
         }
 
         return text.toString();
+    }
+
+    public Document getPubmedEFetchDoc()
+    {
+        return pubmedEFetchDoc;
+    }
+
+    public Document getPMCEFetchDoc()
+    {
+        return pmcEFetchDoc;
     }
 }

@@ -5,16 +5,15 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import uk.ac.bbk.REx.db.documentDB.DocumentDB;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.*;
-import java.io.BufferedInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.sql.SQLException;
@@ -26,7 +25,6 @@ public class PubMedDownloader
     private final Logger LOGGER = Logger.getLogger(this.getClass().getName());
     private Long timeOfLastQuery;
 
-    private DocumentDB docDB;
     private DocumentBuilder builder;
     private XPath xpath;
     private XPathExpression articlesExp;
@@ -42,11 +40,9 @@ public class PubMedDownloader
     private XPathExpression bodyBoolExp;
     private XPathExpression bodyExp;
 
-    public PubMedDownloader(Collection<String> pmids) throws IOException, ParserConfigurationException, SAXException, XPathExpressionException, ClassNotFoundException, SQLException, InstantiationException, IllegalAccessException, InterruptedException
-    {
+    public PubMedDownloader(List<String> pmids, File outputDir) throws IOException, ParserConfigurationException, SAXException, XPathExpressionException, ClassNotFoundException, SQLException, InstantiationException, IllegalAccessException, InterruptedException, TransformerException {
         timeOfLastQuery = null;
 
-        docDB = new DocumentDB();
         builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         XPathFactory factory = XPathFactory.newInstance();
         xpath = factory.newXPath();
@@ -65,29 +61,20 @@ public class PubMedDownloader
         bodyBoolExp = xpath.compile("boolean(body)");
         bodyExp = xpath.compile("body");
 
-        List<String> pmidsList = new ArrayList<String>();
-        for(String pmid : pmids)
-        {
-            if(!docDB.contains(pmid))
-            {
-                pmidsList.add(pmid);
-            }
-        }
-
-        LOGGER.info(String.format("Of the %d PubMed IDs provided, the document cache contains %d.",
-                pmids.size(), pmids.size()-pmidsList.size()));
+        Transformer t = TransformerFactory.newInstance().newTransformer();
+        t.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
 
         Map<String, String> titles = new HashMap<String, String>();
         Map<String, String> abstracts = new HashMap<String, String>();
         List<String> pmcIDs = new ArrayList<String>();
 
         //Separate ID's into bundles of 100. Fetching limitless amounts could result in memory problems.
-        for(int i=0; i<pmidsList.size(); i+=100)
+        for(int i=0; i<pmids.size(); i+=100)
         {
             int endIndex = i+100;
-            if(endIndex > pmidsList.size())
+            if(endIndex > pmids.size())
             {
-                endIndex = pmidsList.size();
+                endIndex = pmids.size();
             }
 
             //Make a comma separated list of IDs to use as a query for eFetch.
@@ -96,7 +83,7 @@ public class PubMedDownloader
             for(int j=i; j<endIndex; j++)
             {
                 count++;
-                pmidsString.append(pmidsList.get(j));
+                pmidsString.append(pmids.get(j));
 
                 if(count < endIndex)
                 {
@@ -117,35 +104,14 @@ public class PubMedDownloader
                 //If it's in PMC just save the info until we get the full text.
                 if(isInPMC(articleNode))
                 {
-                    if(hasTitle(articleNode))
-                    {
-                        titles.put(pmid, getTitle(articleNode));
-                    }
-
-                    if(hasAbstract(articleNode))
-                    {
-                        abstracts.put(pmid, getAbstract(articleNode));
-                    }
-
                     pmcIDs.add(getPMCID(articleNode));
                 }
                 //If it's not in PMC just store the info in the database immediately.
                 else
                 {
-                    StringBuilder availableText = new StringBuilder();
-
-                    if(hasTitle(articleNode))
-                    {
-                        availableText.append(getTitle(articleNode))
-                                     .append(" ");
-                    }
-
-                    if(hasAbstract(articleNode))
-                    {
-                        availableText.append(getAbstract(articleNode));
-                    }
-
-                    docDB.put(pmid, availableText.toString());
+                    File outputFile = new File(outputDir, pmid + ".xml");
+                    Writer writer = new BufferedWriter(new FileWriter(outputFile));
+                    t.transform(new DOMSource(articleNode), new StreamResult(writer));
                 }
             }
         }
@@ -183,26 +149,9 @@ public class PubMedDownloader
                 Node pmcArticleNode = pmcArticleNodes.item(j);
                 String pmid = getPMIDFromPMCArticle(pmcArticleNode);
 
-                StringBuilder availableText = new StringBuilder();
-
-                if(titles.containsKey(pmid))
-                {
-                    availableText.append(titles.get(pmid))
-                                 .append(" ");
-                }
-
-                if(abstracts.containsKey(pmid))
-                {
-                    availableText.append(abstracts.get(pmid))
-                                 .append(" ");
-                }
-
-                if(hasBody(pmcArticleNode))
-                {
-                    availableText.append(getBody(pmcArticleNode));
-                }
-
-                docDB.put(pmid, availableText.toString());
+                File outputFile = new File(outputDir, pmid + ".xml");
+                Writer writer = new BufferedWriter(new FileWriter(outputFile));
+                t.transform(new DOMSource(pmcArticleNode), new StreamResult(writer));
             }
         }
     }
@@ -308,19 +257,5 @@ public class PubMedDownloader
     {
         Node bodyNode = (Node)bodyExp.evaluate(pmcArticleNode, XPathConstants.NODE);
         return bodyNode.getTextContent();
-    }
-
-    public static void main(String[] args) throws IOException, XPathExpressionException, SAXException, ParserConfigurationException, ClassNotFoundException, SQLException, InstantiationException, InterruptedException, IllegalAccessException
-    {
-        DocumentDB docDB = new DocumentDB();
-        docDB.clearDatabase();
-        List<String> pmids = new ArrayList<String>();
-
-        pmids.add("24155869");
-        pmids.add("23105108");
-
-        PubMedDownloader dl = new PubMedDownloader(pmids);
-
-        System.out.println(docDB.get("24155869"));
     }
 }

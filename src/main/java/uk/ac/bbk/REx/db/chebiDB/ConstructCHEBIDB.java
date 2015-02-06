@@ -1,9 +1,6 @@
 package uk.ac.bbk.REx.db.chebiDB;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -19,10 +16,11 @@ import java.util.regex.Pattern;
 
 public class ConstructCHEBIDB
 {
-    public static void main(String[] args) throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException, FileNotFoundException
+    public static void main(String[] args) throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException, IOException
     {
         Class.forName("org.apache.derby.jdbc.EmbeddedDriver").newInstance();
         Connection con = DriverManager.getConnection("jdbc:derby:data/db/chebi");
+        con.setAutoCommit(false);
         Scanner sc;
         Pattern stereoPatt = Pattern.compile("(\\A|\\W)[dl](-)");
 
@@ -91,6 +89,7 @@ public class ConstructCHEBIDB
         long compoundsCount = 0;
 
         sc = new Scanner(new BufferedReader(new FileReader(compounds)));
+        sc.nextLine();
 
         while(sc.hasNextLine())
         {
@@ -112,18 +111,21 @@ public class ConstructCHEBIDB
             if(!values[5].equals("null"))
             {
                 variationsStmt.setInt(1, Integer.parseInt(values[0]));
-
-                String name = values[5];
                 computeVariations(Integer.parseInt(values[0]), values[5], variationsStmt, stereoPatt);
             }
 
             compoundsCount = compoundsCount + line.length() + 1;
             System.out.println("1: " + compoundsCount + "/" + compoundsSize);
         }
+        con.commit();
+        System.out.println("Done 1.");
+
+        sc.close();
 
         File names = new File("/home/jan/Downloads/names.tsv");
         long namesSize = names.length();
         sc = new Scanner(new BufferedReader(new FileReader(names)));
+        sc.nextLine();
         long namesCount = 0;
 
         while(sc.hasNextLine())
@@ -132,13 +134,17 @@ public class ConstructCHEBIDB
             String[] values = line.split("\t");
 
             variationsStmt.setInt(1, Integer.parseInt(values[1]));
-            String name = values[4];
             computeVariations(Integer.parseInt(values[1]), values[4], variationsStmt, stereoPatt);
 
             namesCount = namesCount + line.length() + 1;
             System.out.println("2: " + namesCount + "/" + namesSize);
         }
+        con.commit();
+        System.out.println("Done 2.");
 
+        sc.close();
+
+        /*
         Pattern acidPatt = Pattern.compile("^(.+)ate\\(\\d[+-]\\)$");
         PreparedStatement updateAcidStmt = con.prepareStatement("UPDATE variations SET chebiID=? WHERE chebiID=?");
         PreparedStatement getExactStmt = con.prepareStatement("SELECT * FROM variations WHERE exact=?");
@@ -165,10 +171,11 @@ public class ConstructCHEBIDB
                     updateAcidStmt.setInt(1, newID);
                     updateAcidStmt.setInt(2, oldID);
                     updateAcidStmt.executeUpdate();
-                    System.out.println(oldID + " -> " + newID);
+                    //System.out.println(oldID + " -> " + newID);
                 }
             }
         }
+        */
 
         File inchiFile = new File("/home/jan/Downloads/chebiId_inchi.tsv");
         long inchiFileSize = inchiFile.length();
@@ -176,6 +183,7 @@ public class ConstructCHEBIDB
         PreparedStatement keggIDStmt = con.prepareStatement("UPDATE compounds SET inchi=? WHERE chebiID=? OR parentID=?");
 
         sc = new Scanner(new BufferedReader(new FileReader(inchiFile)));
+        sc.nextLine();
 
         while(sc.hasNextLine())
         {
@@ -193,6 +201,11 @@ public class ConstructCHEBIDB
             inchiFileCount = inchiFileCount + line.length() + 1;
             System.out.println("3: " + inchiFileCount + "/" + inchiFileSize);
         }
+        con.commit();
+
+        System.out.println("Done 3.");
+
+        sc.close();
 
         //Delete every compound which has no InChi
         ResultSet noInchiRS = noInchiStmt.executeQuery();
@@ -211,6 +224,8 @@ public class ConstructCHEBIDB
             removeVariationStmt.setInt(1, chebiID);
             removeVariationStmt.executeUpdate();
         }
+        con.commit();
+        con.close();
     }
 
     public static void computeVariations(int id, String name, PreparedStatement prep, Pattern stereoPatt) throws SQLException

@@ -9,6 +9,7 @@ import uk.ac.ebi.mdk.domain.annotation.rex.RExTag;
 import uk.ac.ebi.mdk.domain.entity.Metabolite;
 import uk.ac.ebi.mdk.domain.entity.reaction.MetabolicParticipant;
 import uk.ac.ebi.mdk.domain.entity.reaction.MetabolicReaction;
+import uk.ac.ebi.mdk.domain.identifier.Identifier;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -19,17 +20,509 @@ public class CompoundAnnotator
      * Add compound annotations to a collection of MDK MetabolicReactions.
      *
      * @param reactions The reactions to which annotations will be added.
-     * @param seedReactions The seed reactions used to extract the reactions.
      * @param bkmDB A BKM-React database object.
      * @param currencyMols A collection of currency molecules to ignore.
      * @throws SQLException If there is a problem reading the BKMDB.
      */
     public static void annotateReactions(
             Collection<MetabolicReaction> reactions,
-            Collection<MetabolicReaction> seedReactions,
             BKMDB bkmDB,
             Set<String> currencyMols) throws SQLException
     {
+        for(MetabolicReaction reaction : reactions)
+        {
+            Map<String, Boolean> substrateIsInBRENDA = new HashMap<String, Boolean>();
+            Map<String, Boolean> productIsInBRENDA = new HashMap<String, Boolean>();
+
+            Map<String, Map<String, String>> substrateOtherPathways = new HashMap<String, Map<String, String>>();
+            Map<String, Map<String, String>> productOtherPathways = new HashMap<String, Map<String, String>>();
+
+            for(MetabolicParticipant substrate : reaction.getReactants())
+            {
+                Metabolite substrateCompound = substrate.getMolecule();
+                String sid = substrateCompound.getIdentifier().toString();
+                if(sid.contains("/"))
+                {
+                    sid = "m_" + substrateCompound.getIdentifier().toString().replaceAll("/", "") + "_c";
+                }
+
+                substrateOtherPathways.put(sid, new HashMap<String, String>());
+            }
+
+            for(MetabolicParticipant product : reaction.getProducts())
+            {
+                Metabolite productCompound = product.getMolecule();
+                String pid = productCompound.getIdentifier().toString();
+                if(pid.contains("/"))
+                {
+                    pid = "m_" + productCompound.getIdentifier().toString().replaceAll("/", "") + "_c";
+                }
+
+                productOtherPathways.put(pid, new HashMap<String, String>());
+            }
+
+            for(MetabolicParticipant substrate : reaction.getReactants())
+            {
+                Metabolite substrateCompound = substrate.getMolecule();
+                String sid = substrateCompound.getIdentifier().toString();
+                if(sid.contains("/"))
+                {
+                    sid = "m_" + substrateCompound.getIdentifier().toString().replaceAll("/", "") + "_c";
+                }
+
+                Collection<InChI> substrateInchis = substrateCompound.getAnnotations(InChI.class);
+
+                for(InChI subInchi : substrateInchis)
+                {
+                    String substrateID = subInchi.toInChI();
+
+                    for(MetabolicParticipant product : reaction.getProducts())
+                    {
+                        Metabolite productCompound = product.getMolecule();
+                        String pid = productCompound.getIdentifier().toString();
+                        if(pid.contains("/"))
+                        {
+                            pid = "m_" + productCompound.getIdentifier().toString().replaceAll("/", "") + "_c";
+                        }
+
+                        Collection<InChI> productInchis = productCompound.getAnnotations(InChI.class);
+
+                        for(InChI proInchi : productInchis)
+                        {
+                            String productID = proInchi.toInChI();
+
+                            //BRENDA
+                            if(!bkmDB.getReactionsContainingSubstrateAndProduct(substrateID, productID).isEmpty())
+                            {
+                                substrateIsInBRENDA.put(substrateID, true);
+                                productIsInBRENDA.put(productID, true);
+                            }
+
+                            //Alternative & Other
+                            if(!currencyMols.contains(substrateID) && !currencyMols.contains(productID))
+                            {
+                                List<Integer> reactionsFound = bkmDB.getReactionsContainingSubstrateAndProduct(substrateID, productID);
+                                Set<String> pathwaysFound = new HashSet<String>();
+                                for(int reactionFound : reactionsFound)
+                                {
+                                    pathwaysFound.addAll(bkmDB.getPathwaysContainingReaction(reactionFound));
+                                }
+
+                                for(String pathwayFound : pathwaysFound)
+                                {
+                                    String pathwayFoundName = bkmDB.getPathwayName(pathwayFound);
+                                    substrateOtherPathways.get(sid).put(pathwayFound, pathwayFoundName);
+                                    productOtherPathways.get(pid).put(pathwayFound, pathwayFoundName);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            for(MetabolicParticipant substrate : reaction.getReactants())
+            {
+                String inchiString = "";
+                for(InChI inchi : substrate.getMolecule().getAnnotations(InChI.class))
+                {
+                    inchiString = inchi.toInChI();
+                }
+
+                boolean substrateIsInBRENDABool = false;
+                if(substrateIsInBRENDA.containsKey(inchiString))
+                {
+                    substrateIsInBRENDABool = true;
+                }
+
+                String id = substrate.getMolecule().getIdentifier().toString();
+                if(id.contains("/"))
+                {
+                    id = "m_" + substrate.getMolecule().getIdentifier().toString().replaceAll("/", "") + "_c";
+                }
+
+                RExCompound compound = new RExCompound(id,
+                        RExCompound.Type.SUBSTRATE,
+                        substrateIsInBRENDABool,
+                        false,
+                        new HashMap<String, String>(),
+                        substrateOtherPathways.get(id),
+                        new HashMap<String, Integer>(),
+                        new HashMap<String, Double>(),
+                        0,
+                        0);
+                reaction.addAnnotation(compound);
+            }
+
+            for(MetabolicParticipant product : reaction.getProducts())
+            {
+                String inchiString = "";
+                for(InChI inchi : product.getMolecule().getAnnotations(InChI.class))
+                {
+                    inchiString = inchi.toInChI();
+                }
+
+                boolean productIsInBRENDABool = false;
+                if(productIsInBRENDA.containsKey(inchiString))
+                {
+                    productIsInBRENDABool = true;
+                }
+
+                String id = product.getMolecule().getIdentifier().toString();
+                if(id.contains("/"))
+                {
+                    id = "m_" + product.getMolecule().getIdentifier().toString().replaceAll("/", "") + "_c";
+                }
+
+                RExCompound compound = new RExCompound(id,
+                        RExCompound.Type.PRODUCT,
+                        productIsInBRENDABool,
+                        false,
+                        new HashMap<String, String>(),
+                        productOtherPathways.get(id),
+                        new HashMap<String, Integer>(),
+                        new HashMap<String, Double>(),
+                        0,
+                        0);
+                reaction.addAnnotation(compound);
+            }
+        }
+    }
+
+    public static void calculateExtraction(Collection<MetabolicReaction> reactions, String organism, Scores scores)
+    {
+        for(MetabolicReaction reaction : reactions)
+        {
+            int occurrences = 0;
+            for(RExExtract extract : reaction.getAnnotations(RExExtract.class))
+            {
+                for(Identifier orgID : extract.organisms())
+                {
+                    if(orgID.toString().equals(organism))
+                    {
+                        extract.setIsInCorrectOrganism(true);
+                        occurrences++;
+                    }
+                }
+            }
+
+            for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
+            {
+                double brendaScore;
+                if(compound.isInBRENDA())
+                {
+                    brendaScore = scores.getBrenda();
+                }
+                else
+                {
+                    brendaScore = scores.getNotBrenda();
+                }
+
+                double occurrencesScore = scores.getOneExtraction();
+                if(occurrences == 2)
+                {
+                    occurrencesScore = scores.getTwoExtractions();
+                }
+                else if(occurrences == 3)
+                {
+                    occurrencesScore = scores.getThreeExtractions();
+                }
+                else if(occurrences == 4)
+                {
+                    occurrencesScore = scores.getFourExtractions();
+                }
+                else if(occurrences >= 5)
+                {
+                    occurrencesScore = scores.getFiveOrMoreExtractions();
+                }
+
+                double extraction = (1-occurrencesScore)*brendaScore + occurrencesScore;
+
+                if(occurrences == 0)
+                {
+                    extraction = 0;
+                }
+
+                compound.setExtraction(extraction);
+            }
+        }
+    }
+
+    public static void calculateBranches(Collection<MetabolicReaction> reactions, Set<String> seedInChIs, Scores scores, Set<String> currencyMols)
+    {
+        int maxLength = scores.getMaxBranchLength();
+        Map<String, Set<MetabolicReaction>> substrateIndex = new HashMap<String, Set<MetabolicReaction>>();
+        Map<String, Set<MetabolicReaction>> productIndex = new HashMap<String, Set<MetabolicReaction>>();
+        for(MetabolicReaction reaction : reactions)
+        {
+            for(MetabolicParticipant substrate : reaction.getReactants())
+            {
+                Metabolite m = substrate.getMolecule();
+                for(InChI inchi : m.getAnnotations(InChI.class))
+                {
+                    if(currencyMols.contains(inchi.toInChI()))
+                    {
+                        continue;
+                    }
+
+                    if(!substrateIndex.containsKey(inchi.toInChI()))
+                    {
+                        substrateIndex.put(inchi.toInChI(), new HashSet<MetabolicReaction>());
+                    }
+
+                    substrateIndex.get(inchi.toInChI()).add(reaction);
+                }
+            }
+
+            for(MetabolicParticipant product : reaction.getProducts())
+            {
+                Metabolite m = product.getMolecule();
+                for(InChI inchi : m.getAnnotations(InChI.class))
+                {
+                    if(currencyMols.contains(inchi.toInChI()))
+                    {
+                        continue;
+                    }
+
+                    if(!productIndex.containsKey(inchi.toInChI()))
+                    {
+                        productIndex.put(inchi.toInChI(), new HashSet<MetabolicReaction>());
+                    }
+
+                    productIndex.get(inchi.toInChI()).add(reaction);
+                }
+            }
+        }
+
+        Set<Branch> branches = new HashSet<Branch>();
+        Set<Branch> alternativeBranches = new HashSet<Branch>();
+
+        for(String inchi : seedInChIs)
+        {
+            if(substrateIndex.containsKey(inchi))
+            {
+                for(MetabolicReaction reaction : substrateIndex.get(inchi))
+                {
+                    Set<String> seedIDs = new HashSet<String>();
+                    for(MetabolicParticipant substrate : reaction.getReactants())
+                    {
+                        Metabolite m = substrate.getMolecule();
+                        String id = m.getIdentifier().toString();
+                        if(id.contains("/"))
+                        {
+                            id = "m_" + m.getIdentifier().toString().replaceAll("/", "") + "_c";
+                        }
+
+                        for(InChI inchia : m.getAnnotations(InChI.class))
+                        {
+                            if(seedInChIs.contains(inchia.toInChI()))
+                            {
+                                seedIDs.add(id);
+                            }
+                        }
+                    }
+
+                    boolean isInSeed = false;
+                    boolean aboveThreshold = false;
+                    for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
+                    {
+                        if(compound.isInSeed())
+                        {
+                            isInSeed = true;
+                        }
+
+                        if(seedIDs.contains(compound.getID()) && compound.getExtraction() > 0.75)
+                        {
+                            aboveThreshold = true;
+                        }
+                    }
+
+                    if(!isInSeed && aboveThreshold)
+                    {
+                        branches.add(new Branch(reaction, seedInChIs));
+                    }
+                }
+            }
+        }
+
+        for(int i=0; i<maxLength; i++)
+        {
+            //Find any branches that have returned to the seed pathway
+            for(Branch branch : branches)
+            {
+                MetabolicReaction lastReaction = branch.getFinalReaction();
+
+                for(MetabolicParticipant product : lastReaction.getProducts())
+                {
+                    Metabolite m = product.getMolecule();
+                    String inchiString = "";
+                    for(InChI inchi : m.getAnnotations(InChI.class))
+                    {
+                        inchiString = inchi.toInChI();
+                    }
+
+                    if(seedInChIs.contains(inchiString))
+                    {
+                        branch.finalise(seedInChIs);
+                        if(!branch.startsAndEndsWithSameSeedMolecule())
+                        {
+                            alternativeBranches.add(branch);
+                        }
+                    }
+                }
+            }
+
+            //Prevent the branches found in the last step from extending any further
+            for(Branch alternativeBranch : alternativeBranches)
+            {
+                branches.remove(alternativeBranch);
+            }
+
+            //Extend all remaining branches
+            Set<Branch> branchesToAdd = new HashSet<Branch>();
+            for(Branch branch : branches)
+            {
+                MetabolicReaction lastReaction = branch.getFinalReaction();
+
+                Map<MetabolicReaction, Set<Metabolite>> nextReactionsWithLinkingMolecules =
+                        new HashMap<MetabolicReaction, Set<Metabolite>>();
+                for(MetabolicParticipant product : lastReaction.getProducts())
+                {
+                    Metabolite m = product.getMolecule();
+                    String inchiString = "";
+                    for(InChI inchi : m.getAnnotations(InChI.class))
+                    {
+                        inchiString = inchi.toInChI();
+                    }
+
+                    if(substrateIndex.containsKey(inchiString))
+                    {
+                        for(MetabolicReaction nextReaction : substrateIndex.get(inchiString))
+                        {
+                            if(!nextReactionsWithLinkingMolecules.containsKey(nextReaction))
+                            {
+                                nextReactionsWithLinkingMolecules.put(nextReaction, new HashSet<Metabolite>());
+                            }
+
+                            nextReactionsWithLinkingMolecules.get(nextReaction).add(m);
+                        }
+                    }
+                }
+
+                for(MetabolicReaction reaction : nextReactionsWithLinkingMolecules.keySet())
+                {
+                    boolean isInSeed = false;
+                    for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
+                    {
+                        if(compound.isInSeed())
+                        {
+                            isInSeed = true;
+                        }
+                    }
+
+                    //Are the linking molecules currency molecules?
+                    boolean linkersAreCurrency = true;
+                    boolean aboveThreshold = false;
+                    for(Metabolite linker : nextReactionsWithLinkingMolecules.get(reaction))
+                    {
+                        for(MetabolicParticipant substrate : reaction.getReactants())
+                        {
+                            if(linker == substrate.getMolecule())
+                            {
+                                String id = linker.getIdentifier().toString();
+                                if(id.contains("/"))
+                                {
+                                    id = "m_" + linker.getIdentifier().toString().replaceAll("/", "") + "_c";
+                                }
+
+                                for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
+                                {
+                                    if(compound.getID().equals(id))
+                                    {
+                                        //if(compound.getExtraction() > 0.75)
+                                        //{
+                                        aboveThreshold = true;
+
+                                        //}
+                                    }
+                                }
+                            }
+                        }
+
+                        for(InChI inchi : linker.getAnnotations(InChI.class))
+                        {
+                            if(!currencyMols.contains(inchi.toString()))
+                            {
+                                linkersAreCurrency = false;
+                            }
+                        }
+                    }
+
+                    if(!isInSeed
+                            && aboveThreshold
+                            && !branch.containsReaction(reaction)
+                            && !branch.containsMetabolite(nextReactionsWithLinkingMolecules.get(reaction))
+                            && !linkersAreCurrency)
+                    {
+                        Branch newBranch = branch.extendBranch(reaction, nextReactionsWithLinkingMolecules.get(reaction));
+                        branchesToAdd.add(newBranch);
+                    }
+                }
+            }
+
+            branches.clear();
+            branches.addAll(branchesToAdd);
+        }
+
+        int branchID = 0;
+        for(Branch branch : alternativeBranches)
+        {
+            branchID++;
+
+            for(MetabolicReaction reaction : branch.getReactions())
+            {
+                Set<String> substrateIDs = new HashSet<String>();
+                for(Metabolite m : branch.getSubstrates(reaction))
+                {
+                    String id = m.getIdentifier().toString();
+                    if(id.contains("/"))
+                    {
+                        id = "m_" + m.getIdentifier().toString().replaceAll("/", "") + "_c";
+                    }
+                    substrateIDs.add(id);
+                }
+
+                Set<String> productIDs = new HashSet<String>();
+                for(Metabolite m : branch.getProducts(reaction))
+                {
+                    String id = m.getIdentifier().toString();
+                    if(id.contains("/"))
+                    {
+                        id = "m_" + m.getIdentifier().toString().replaceAll("/", "") + "_c";
+                    }
+                    productIDs.add(id);
+                }
+
+                for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
+                {
+                    if(substrateIDs.contains(compound.getID())
+                            || productIDs.contains(compound.getID()))
+                    {
+                        compound.addBranch(Integer.toString(branchID), branch.length(), branch.getScore());
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Calculate the relevance of a collection of MetabolicReactions and update their compound annotations.
+     *
+     * @param reactions The reactions to calculate relevance for.
+     */
+    public static void calculateAlternativePathwayRelevance(Collection<MetabolicReaction> reactions, Pathway seed,
+                                                            String organism, Collection<String> seedIDs, Set<String> currencyMols,
+                                                            Scores scores, BKMDB bkmDB) throws SQLException {
+        List<MetabolicReaction> seedReactions = seed.getReactions();
         Set<String> seedInChIs = new HashSet<String>();
         Map<String, Set<MetabolicReaction>> seedSubstrateIndex = new HashMap<String, Set<MetabolicReaction>>();
         Map<String, Set<MetabolicReaction>> seedProductIndex = new HashMap<String, Set<MetabolicReaction>>();
@@ -53,7 +546,11 @@ public class CompoundAnnotator
                     }
 
                     seedSubstrateIndex.get(id).add(seedReaction);
-                    seedInChIs.add(id);
+
+                    if(!currencyMols.contains(id))
+                    {
+                        seedInChIs.add(id);
+                    }
                 }
             }
 
@@ -74,7 +571,11 @@ public class CompoundAnnotator
                     }
 
                     seedProductIndex.get(id).add(seedReaction);
-                    seedInChIs.add(id);
+
+                    if(!currencyMols.contains(id))
+                    {
+                        seedInChIs.add(id);
+                    }
                 }
             }
         }
@@ -162,528 +663,198 @@ public class CompoundAnnotator
         }
 
         Set<String> seedPathwaysFound = new HashSet<String>();
-        for(Integer seedReactionFound : seedReactionsFound)
+
+        if(seedIDs == null)
         {
-            seedPathwaysFound.addAll(bkmDB.getPathwaysContainingReaction(seedReactionFound));
+            for(Integer seedReactionFound : seedReactionsFound)
+            {
+                List<String> pathwayIDs = bkmDB.getPathwaysContainingReaction(seedReactionFound);
+                seedPathwaysFound.addAll(pathwayIDs);
+            }
+        }
+        else
+        {
+            seedPathwaysFound.addAll(seedIDs);
         }
 
-        //Branches
-        int maxLength = 4;
-        Map<String, Set<MetabolicReaction>> substrateIndex = new HashMap<String, Set<MetabolicReaction>>();
-        Map<String, Set<MetabolicReaction>> productIndex = new HashMap<String, Set<MetabolicReaction>>();
         for(MetabolicReaction reaction : reactions)
         {
-            for(MetabolicParticipant substrate : reaction.getReactants())
+            for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
             {
-                Metabolite m = substrate.getMolecule();
-                for(InChI inchi : m.getAnnotations(InChI.class))
+                for(String pathwayID : compound.getOtherPathways().keySet())
                 {
-                    if(currencyMols.contains(inchi.toInChI()))
+                    if(seedPathwaysFound.contains(pathwayID))
                     {
-                        continue;
-                    }
-
-                    if(!substrateIndex.containsKey(inchi.toInChI()))
-                    {
-                        substrateIndex.put(inchi.toInChI(), new HashSet<MetabolicReaction>());
-                    }
-
-                    substrateIndex.get(inchi.toInChI()).add(reaction);
-                }
-            }
-
-            for(MetabolicParticipant product : reaction.getProducts())
-            {
-                Metabolite m = product.getMolecule();
-                for(InChI inchi : m.getAnnotations(InChI.class))
-                {
-                    if(currencyMols.contains(inchi.toInChI()))
-                    {
-                        continue;
-                    }
-
-                    if(!productIndex.containsKey(inchi.toInChI()))
-                    {
-                        productIndex.put(inchi.toInChI(), new HashSet<MetabolicReaction>());
-                    }
-
-                    productIndex.get(inchi.toInChI()).add(reaction);
-                }
-            }
-        }
-
-        Set<List<MetabolicReaction>> branches = new HashSet<List<MetabolicReaction>>();
-        Set<List<MetabolicReaction>> alternativeBranches = new HashSet<List<MetabolicReaction>>();
-
-        for(String inchi : seedInChIs)
-        {
-            if(substrateIndex.containsKey(inchi))
-            {
-                for(MetabolicReaction reaction : substrateIndex.get(inchi))
-                {
-                    List<MetabolicReaction> branch = new ArrayList<MetabolicReaction>();
-                    branch.add(reaction);
-                    branches.add(branch);
-                }
-            }
-        }
-
-        for(int i=0; i<maxLength; i++)
-        {
-            //Find any branches that have returned to the seed pathway
-            for(List<MetabolicReaction> branch : branches)
-            {
-                MetabolicReaction lastReaction = branch.get(branch.size()-1);
-
-                for(MetabolicParticipant product : lastReaction.getProducts())
-                {
-                    Metabolite m = product.getMolecule();
-                    String inchiString = "";
-                    for(InChI inchi : m.getAnnotations(InChI.class))
-                    {
-                        inchiString = inchi.toInChI();
-                    }
-
-                    if(seedInChIs.contains(inchiString))
-                    {
-                        alternativeBranches.add(branch);
+                        compound.addAlternativePathway(pathwayID, compound.getOtherPathways().get(pathwayID));
                     }
                 }
-            }
 
-            //Prevent the branches found in the last step from extending any further
-            for(List<MetabolicReaction> alternativeBranch : alternativeBranches)
-            {
-                branches.remove(alternativeBranch);
-            }
-
-            //Extend all remaining branches
-            Set<List<MetabolicReaction>> extendedBranches = new HashSet<List<MetabolicReaction>>();
-            Set<List<MetabolicReaction>> branchesToAdd = new HashSet<List<MetabolicReaction>>();
-            for(List<MetabolicReaction> branch : branches)
-            {
-                MetabolicReaction lastReaction = branch.get(branch.size()-1);
-
-                for(MetabolicParticipant product : lastReaction.getProducts())
+                for(String pathwayID : seedPathwaysFound)
                 {
-                    Metabolite m = product.getMolecule();
-                    String inchiString = "";
-                    for(InChI inchi : m.getAnnotations(InChI.class))
-                    {
-                        inchiString = inchi.toInChI();
-                    }
-
-                    if(substrateIndex.containsKey(inchiString))
-                    {
-                        for(MetabolicReaction nextReaction : substrateIndex.get(inchiString))
-                        {
-                            extendedBranches.add(branch);
-                            List<MetabolicReaction> newBranch = new ArrayList<MetabolicReaction>(branch);
-                            newBranch.add(nextReaction);
-                            branchesToAdd.add(newBranch);
-                        }
-                    }
+                    compound.removeOtherPathway(pathwayID);
                 }
-            }
-
-            branches.addAll(branchesToAdd);
-            branches.removeAll(extendedBranches);
-        }
-
-        Set<MetabolicReaction> finalBranches = new HashSet<MetabolicReaction>();
-
-        for(List<MetabolicReaction> alternativeBranch : alternativeBranches)
-        {
-            //Discount branches that start and end with the same molecule i.e. a circle
-            Set<String> startMols = new HashSet<String>();
-            for(MetabolicParticipant substrate : alternativeBranch.get(0).getReactants())
-            {
-                Metabolite m = substrate.getMolecule();
-                String inchiString = "";
-                for(InChI inchi : m.getAnnotations(InChI.class))
-                {
-                    inchiString = inchi.toInChI();
-                }
-
-                if(seedInChIs.contains(inchiString))
-                {
-                    startMols.add(inchiString);
-                }
-            }
-
-            Set<String> endMols = new HashSet<String>();
-            for(MetabolicParticipant product : alternativeBranch.get(alternativeBranch.size()-1).getProducts())
-            {
-                Metabolite m = product.getMolecule();
-                String inchiString = "";
-                for(InChI inchi : m.getAnnotations(InChI.class))
-                {
-                    inchiString = inchi.toInChI();
-                }
-
-                if(seedInChIs.contains(inchiString))
-                {
-                    endMols.add(inchiString);
-                }
-            }
-
-            Set<String> uniqueMols = new HashSet<String>(startMols);
-            uniqueMols.removeAll(endMols);
-
-            if(startMols.size() == uniqueMols.size())
-            {
-                finalBranches.addAll(alternativeBranch);
             }
         }
 
         for(MetabolicReaction reaction : reactions)
         {
-            Map<String, Integer> substrateOccurrences = new HashMap<String, Integer>();
-            Map<String, Integer> productOccurrences = new HashMap<String, Integer>();
-            for(RExExtract extract : reaction.getAnnotations(RExExtract.class))
-            {
-                if(extract.isInCorrectOrganism())
-                {
-                    for(RExTag tag : extract.tags())
-                    {
-                        String id = tag.id();
-                        if(tag.type() == RExTag.Type.SUBSTRATE)
-                        {
-                            if(!substrateOccurrences.containsKey(id))
-                            {
-                                substrateOccurrences.put(id, 0);
-                            }
-
-                            substrateOccurrences.put(id, substrateOccurrences.get(id) + 1);
-                        }
-
-                        if(tag.type() == RExTag.Type.PRODUCT)
-                        {
-                            if(!productOccurrences.containsKey(id))
-                            {
-                                productOccurrences.put(id, 0);
-                            }
-
-                            productOccurrences.put(id, productOccurrences.get(id) + 1);
-                        }
-                    }
-                }
-            }
-
-            Map<String, Boolean> substrateIsInBRENDA = new HashMap<String, Boolean>();
-            Map<String, Boolean> productIsInBRENDA = new HashMap<String, Boolean>();
-
-            Map<String, Boolean> substrateIsInSeed = new HashMap<String, Boolean>();
-            Map<String, Boolean> productIsInSeed = new HashMap<String, Boolean>();
-
-            Map<String, String> substrateAlternativePathways = new HashMap<String, String>();
-            Map<String, String> productAlternativePathways = new HashMap<String, String>();
-
-            Map<String, String> substrateOtherPathways = new HashMap<String, String>();
-            Map<String, String> productOtherPathways = new HashMap<String, String>();
-
+            Set<String> substrateIsInSeedIndex = new HashSet<String>();
+            Set<String> productIsInSeedIndex = new HashSet<String>();
             for(MetabolicParticipant substrate : reaction.getReactants())
             {
                 Metabolite substrateCompound = substrate.getMolecule();
-                Collection<InChI> substrateInchis = substrateCompound.getAnnotations(InChI.class);
-                String substrateID = "";
-                for(InChI inchi : substrateInchis)
+                String sid = substrateCompound.getIdentifier().toString();
+                if(sid.contains("/"))
                 {
-                    substrateID = inchi.toInChI();
+                    sid = "m_" + substrateCompound.getIdentifier().toString().replaceAll("/", "") + "_c";
                 }
 
-                for(MetabolicParticipant product : reaction.getProducts())
+                for(InChI substrateInchi : substrate.getMolecule().getAnnotations(InChI.class))
                 {
-                    Metabolite productCompound = product.getMolecule();
-                    Collection<InChI> productInchis = productCompound.getAnnotations(InChI.class);
-                    String productID = "";
-                    for(InChI inchi : productInchis)
+                    for(MetabolicParticipant product : reaction.getProducts())
                     {
-                        productID = inchi.toInChI();
-                    }
-
-                    //BRENDA
-                    if(!bkmDB.getReactionsContainingSubstrateAndProduct(substrateID, productID).isEmpty())
-                    {
-                        substrateIsInBRENDA.put(substrateID, true);
-                        productIsInBRENDA.put(productID, true);
-                    }
-
-                    //Seed
-                    Set<MetabolicReaction> commonReactions = new HashSet<MetabolicReaction>();
-
-                    if(seedSubstrateIndex.containsKey(substrateID)
-                            && seedProductIndex.containsKey(productID))
-                    {
-                        Set<MetabolicReaction> substrateReactions = seedSubstrateIndex.get(substrateID);
-                        Set<MetabolicReaction> productReactions = seedProductIndex.get(productID);
-
-                        commonReactions = new HashSet<MetabolicReaction>(substrateReactions);
-                        commonReactions.retainAll(productReactions);
-                    }
-
-                    if(!commonReactions.isEmpty())
-                    {
-                        substrateIsInSeed.put(substrateID, true);
-                        productIsInSeed.put(productID, true);
-                    }
-
-                    //Alternative & Other
-                    if(!currencyMols.contains(substrateID) && !currencyMols.contains(productID))
-                    {
-                        List<Integer> reactionsFound = bkmDB.getReactionsContainingSubstrateAndProduct(substrateID, productID);
-                        Set<String> pathwaysFound = new HashSet<String>();
-                        for(int reactionFound : reactionsFound)
+                        Metabolite productCompound = product.getMolecule();
+                        String pid = productCompound.getIdentifier().toString();
+                        if(sid.contains("/"))
                         {
-                            pathwaysFound.addAll(bkmDB.getPathwaysContainingReaction(reactionFound));
+                            pid = "m_" + productCompound.getIdentifier().toString().replaceAll("/", "") + "_c";
                         }
 
-                        for(String pathwayFound : pathwaysFound)
+                        for(InChI productInchi : product.getMolecule().getAnnotations(InChI.class))
                         {
-                            boolean alternative = false;
-                            String pathwayFoundName = bkmDB.getPathwayName(pathwayFound);
-                            for(String seedPathwayFound : seedPathwaysFound)
+                            if(seed.containsPair(substrateInchi.toInChI(), productInchi.toInChI()))
                             {
-                                String seedPathwayFoundName = bkmDB.getPathwayName(seedPathwayFound);
-                                if(bkmDB.arePathwayNamesAlternatives(pathwayFoundName, seedPathwayFoundName))
+                                if(!substrateIsInSeedIndex.contains(sid))
                                 {
-                                    alternative = true;
-                                    break;
+                                    substrateIsInSeedIndex.add(sid);
+                                }
+
+                                if(!productIsInSeedIndex.contains(pid))
+                                {
+                                    productIsInSeedIndex.add(pid);
                                 }
                             }
-
-                            if(alternative)
-                            {
-                                substrateAlternativePathways.put(pathwayFound, bkmDB.getPathwayName(pathwayFound));
-                                productAlternativePathways.put(pathwayFound, bkmDB.getPathwayName(pathwayFound));
-                            }
-                            else
-                            {
-                                substrateOtherPathways.put(pathwayFound, bkmDB.getPathwayName(pathwayFound));
-                                productOtherPathways.put(pathwayFound, bkmDB.getPathwayName(pathwayFound));
-                            }
                         }
                     }
                 }
             }
 
-            for(MetabolicParticipant substrate : reaction.getReactants())
+            for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
             {
-                String inchiString = "";
-                for(InChI inchi : substrate.getMolecule().getAnnotations(InChI.class))
+                if(compound.getType() == RExCompound.Type.SUBSTRATE)
                 {
-                    inchiString = inchi.toInChI();
-                }
-
-                boolean substrateIsInBRENDABool = false;
-                if(substrateIsInBRENDA.containsKey(inchiString))
-                {
-                    substrateIsInBRENDABool = true;
-                }
-
-                boolean substrateIsInSeedBool = false;
-                if(substrateIsInSeed.containsKey(inchiString))
-                {
-                    substrateIsInSeedBool = true;
-                }
-
-                boolean isInBranch = finalBranches.contains(reaction);
-
-                double extraction = 0;
-
-                String id = substrate.getMolecule().getIdentifier().toString();
-                if(id.contains("/"))
-                {
-                    id = substrate.getMolecule().getIdentifier().toString().replaceAll("/", "") + "_c";
-                }
-
-                if(substrateOccurrences.containsKey(id))
-                {
-                    int occurrences = substrateOccurrences.get(id);
-                    extraction += occurrences;
-
-                    if(substrateIsInBRENDABool)
+                    if(substrateIsInSeedIndex.contains(compound.getID()))
                     {
-                        extraction += 5.0;
+                        compound.setIsInSeed(true);
                     }
                 }
-
-                RExCompound compound = new RExCompound(id,
-                        RExCompound.Type.SUBSTRATE,
-                        substrateIsInBRENDABool,
-                        substrateIsInSeedBool,
-                        isInBranch,
-                        substrateAlternativePathways,
-                        substrateOtherPathways,
-                        extraction,
-                        0);
-                reaction.addAnnotation(compound);
-            }
-
-            for(MetabolicParticipant product : reaction.getProducts())
-            {
-                String inchiString = "";
-                for(InChI inchi : product.getMolecule().getAnnotations(InChI.class))
+                else if(compound.getType() == RExCompound.Type.PRODUCT)
                 {
-                    inchiString = inchi.toInChI();
-                }
-
-                boolean productIsInBRENDABool = false;
-                if(productIsInBRENDA.containsKey(inchiString))
-                {
-                    productIsInBRENDABool = true;
-                }
-
-                boolean productIsInSeedBool = false;
-                if(productIsInSeed.containsKey(inchiString))
-                {
-                    productIsInSeedBool = true;
-                }
-
-                boolean isInBranch = finalBranches.contains(reaction);
-
-                double extraction = 0;
-
-                String id = product.getMolecule().getIdentifier().toString();
-                if(id.contains("/"))
-                {
-                    id = product.getMolecule().getIdentifier().toString().replaceAll("/", "") + "_c";
-                }
-
-                if(productOccurrences.containsKey(id))
-                {
-                    int occurrences = productOccurrences.get(id);
-                    extraction += occurrences;
-
-                    if(productIsInBRENDABool)
+                    if(productIsInSeedIndex.contains(compound.getID()))
                     {
-                        extraction += 5.0;
+                        compound.setIsInSeed(true);
                     }
                 }
-
-                RExCompound compound = new RExCompound(id,
-                        RExCompound.Type.PRODUCT,
-                        productIsInBRENDABool,
-                        productIsInSeedBool,
-                        isInBranch,
-                        productAlternativePathways,
-                        productOtherPathways,
-                        extraction,
-                        0);
-                reaction.addAnnotation(compound);
             }
         }
-    }
 
-    /**
-     * Calculate the relevance of a collection of MetabolicReactions and update their compound annotations.
-     *
-     * @param reactions The reactions to calculate relevance for.
-     */
-    public static void calculateAlternativePathwayRelevance(Collection<MetabolicReaction> reactions)
-    {
         Pathway pathway = new Pathway(reactions);
 
-        Set<MetabolicReaction> seenReactions = new HashSet<MetabolicReaction>();
-        Set<String> relevantMetabolites = new HashSet<String>();
-
-        for(MetabolicReaction reaction : pathway.getReactions())
-        {
-            seenReactions.add(reaction);
-            for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
-            {
-                if(compound.isInBranch()
-                        || !compound.getAlternativePathways().isEmpty()
-                        || compound.isInSeed())
-                {
-                    relevantMetabolites.add(compound.getID());
-                }
-            }
-        }
-
-        Set<MetabolicReaction> nextReactions = new HashSet<MetabolicReaction>();
-        for(String relevantMetaboliteID : relevantMetabolites)
-        {
-            nextReactions.addAll(pathway.getReactionsContainingMolecule(relevantMetaboliteID));
-        }
-        nextReactions.removeAll(seenReactions);
-
-        Map<MetabolicReaction, Integer> totalSeedReactionsInSources = new HashMap<MetabolicReaction, Integer>();
-
-        while(!nextReactions.isEmpty())
-        {
-            for(MetabolicReaction reaction : nextReactions)
-            {
-                seenReactions.add(reaction);
-                TreeSet<Integer> totals = new TreeSet<Integer>();
-                for(RExExtract extract : reaction.getAnnotations(RExExtract.class))
-                {
-                    if(extract.isInCorrectOrganism())
-                    {
-                        totals.add(extract.totalSeedMetabolitesInSource());
-                    }
-                }
-
-                int greatestTotal = totals.last();
-
-                if(greatestTotal > 1)
-                {
-                    totalSeedReactionsInSources.put(reaction, greatestTotal);
-                    for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
-                    {
-                        relevantMetabolites.add(compound.getID());
-                    }
-                }
-            }
-
-            for(String relevantMetaboliteID : relevantMetabolites)
-            {
-                nextReactions.addAll(pathway.getReactionsContainingMolecule(relevantMetaboliteID));
-            }
-
-            nextReactions.removeAll(seenReactions);
-        }
-
+        Map<MetabolicReaction, Double> greatestFScores = new HashMap<MetabolicReaction, Double>();
         for(MetabolicReaction reaction : reactions)
         {
-            for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
+            TreeSet<Double> fscores = new TreeSet<Double>();
+            for(RExExtract extract : reaction.getAnnotations(RExExtract.class))
             {
-                compound.setRelevance(0.0);
-            }
-        }
+                Set<String> inchis = new HashSet<String>();
+                for(InChI inchi : extract.molecules())
+                {
+                    inchis.add(inchi.toInChI());
+                }
+                extract.setTotalMetabolitesInSource(inchis.size());
+                inchis.retainAll(seedInChIs);
+                extract.setTotalSeedMetabolitesInSource(inchis.size());
 
-        for(MetabolicReaction reaction : totalSeedReactionsInSources.keySet())
-        {
-            for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
+                if(extract.isInCorrectOrganism())
+                {
+                    fscores.add(calculateFScore(extract.totalMetabolitesInSource(),
+                            seedInChIs.size(), extract.totalSeedMetabolitesInSource()));
+                }
+            }
+
+            if(!fscores.isEmpty())
             {
-                compound.setRelevance(0.25);
+                double greatestFScore = fscores.last();
+                greatestFScores.put(reaction, greatestFScore);
+            }
+            else
+            {
+                greatestFScores.put(reaction, 0.0);
             }
         }
 
         for(MetabolicReaction reaction : reactions)
         {
+            int occurrences = 0;
+            for(RExExtract extract : reaction.getAnnotations(RExExtract.class))
+            {
+                for(Identifier orgID : extract.organisms())
+                {
+                    if(orgID.toString().equals(organism))
+                    {
+                        extract.setIsInCorrectOrganism(true);
+                        occurrences++;
+                    }
+                }
+            }
+
+            double fscore = greatestFScores.get(reaction);
+
+            double sourceScore = Math.log(fscore)
+                                 * scores.getSeedMoleculeDiceScoreMultiplier()
+                                 + scores.getSeedMoleculeDiceScoreConstant();
+            if(sourceScore < 0)
+            {
+                sourceScore = 0;
+            }
+
             for(RExCompound compound : reaction.getAnnotations(RExCompound.class))
             {
-                if(compound.isInBranch())
-                {
-                    compound.setRelevance(0.25);
-                }
-
-                if(!compound.getAlternativePathways().isEmpty())
-                {
-                    compound.setRelevance(0.5);
-                }
-
-                if(compound.isInBranch()
-                        && !compound.getAlternativePathways().isEmpty())
-                {
-                    compound.setRelevance(0.75);
-                }
+                double score = sourceScore;
 
                 if(compound.isInSeed())
                 {
-                    compound.setRelevance(1.0);
+                    score = score + ((1-score)*scores.getInSeed());
                 }
+
+                if(occurrences == 1)
+                {
+                    score = score + ((1-score)*scores.getOneExtractionRelevance());
+                }
+                else if(occurrences == 2)
+                {
+                    score = score + ((1-score)*scores.getTwoExtractionsRelevance());
+                }
+                else if(occurrences == 3)
+                {
+                    score = score + ((1-score)*scores.getThreeExtractionsRelevance());
+                }
+                else if(occurrences == 4)
+                {
+                    score = score + ((1-score)*scores.getFourExtractionsRelevance());
+                }
+                else if(occurrences >= 5)
+                {
+                    score = score + ((1-score)*scores.getFiveOrMoreExtractionsRelevance());
+                }
+
+                TreeSet<Double> branchScores = new TreeSet<Double>(compound.getBranchScores().values());
+                if(!branchScores.isEmpty())
+                {
+                    score = score + ((1-score)*branchScores.last());
+                }
+
+                compound.setRelevance(score);
             }
         }
     }
@@ -820,5 +991,31 @@ public class CompoundAnnotator
         }
 
         return completedLinks;
+    }
+
+    public static double sourceMolsScore(int sourceMols)
+    {
+        //return 3.0*(Math.tanh(0.75*(double)sourceMols - 2.0) + 1.0);
+        return Math.tanh(0.75*(double)sourceMols - 2.0) + 1.0;
+    }
+
+    public static double finalScore(double score)
+    {
+        double wholeScore = (Math.tanh(score/2.0 - 2.0) + 1.0)/2.0;
+        double threeDP = (double)Math.round(wholeScore * 1000.0)/1000.0;
+        return threeDP;
+    }
+
+    private static double calculateFScore(int totalFound, int totalCorrect, int correctFound)
+    {
+        if(correctFound == 0)
+        {
+            return 0;
+        }
+
+        double precision = (double)correctFound/(double)totalFound;
+        double recall = (double)correctFound/(double)totalCorrect;
+
+        return 2*((precision*recall)/(precision+recall));
     }
 }

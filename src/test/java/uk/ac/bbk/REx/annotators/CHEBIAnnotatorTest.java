@@ -43,7 +43,7 @@ public class CHEBIAnnotatorTest
     @Test
     public void test() throws AnalysisEngineProcessException
     {
-        cas.setDocumentText("GlcNAc-1-P is a biological small molecule.");
+        cas.setDocumentText("tricarboxylic acid");
 
         Chemical c = new Chemical(cas);
         c.setBegin(0);

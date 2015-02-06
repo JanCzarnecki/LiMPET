@@ -33,7 +33,7 @@ public class ArticleTest
         Article a = new Article("24086341");
 
         Scanner abstractScanner = new Scanner(new BufferedInputStream(
-                this.getClass().getResourceAsStream("/uk/ac/bbk/REx/readers/abstract.txt")));
+                this.getClass().getResourceAsStream("abstract.txt")));
         abstractScanner.useDelimiter("\\A");
         String abstractString = abstractScanner.next();
         abstractScanner.close();

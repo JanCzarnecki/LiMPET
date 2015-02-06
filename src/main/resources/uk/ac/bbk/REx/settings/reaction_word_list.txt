@@ -10,6 +10,7 @@ isomer
 coupl
 cycliz
 cyclis
+cyclis
 cleav
 dimer
 dimeris

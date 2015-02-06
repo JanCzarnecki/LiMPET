@@ -1,6 +1,8 @@
 package uk.ac.bbk.REx.internalTypes;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 import java.util.*;
 
 import uk.ac.bbk.REx.exception.CHEBIException;
@@ -17,13 +19,14 @@ import java.util.Set;
 
 public class Pathway
 {
-	List<MetabolicReaction> reactions;
-	Set<String> chemicalNames;
-    Map<String, Set<MetabolicReaction>> substrateIndex;
-    Map<String, Set<MetabolicReaction>> productIndex;
-	Map<String, Set<MetabolicReaction>> substrateInchiIndex;
-	Map<String, Set<MetabolicReaction>> productInchiIndex;
-    Set<String> inchis;
+    private String name;
+    private List<MetabolicReaction> reactions;
+    private Set<String> chemicalNames;
+    private Map<String, Set<MetabolicReaction>> substrateIndex;
+    private Map<String, Set<MetabolicReaction>> productIndex;
+    private Map<String, Set<MetabolicReaction>> substrateInchiIndex;
+    private Map<String, Set<MetabolicReaction>> productInchiIndex;
+    private Set<String> inchis;
 
 	public Pathway(Collection<MetabolicReaction> someReactions)
 	{
@@ -34,15 +37,9 @@ public class Pathway
 		substrateInchiIndex = new HashMap<String, Set<MetabolicReaction>>();
 		productInchiIndex = new HashMap<String, Set<MetabolicReaction>>();
         inchis = new HashSet<String>();
-		
-		Set<Metabolite> metabolites = new HashSet<Metabolite>();
+
 		for(MetabolicReaction r : reactions)
 		{
-            for(MetabolicParticipant participant : r.getParticipants())
-            {
-			    metabolites.add(participant.getMolecule());
-            }
-			
 			for(MetabolicParticipant substrate : r.getReactants())
 			{
                 Metabolite metabolite = substrate.getMolecule();
@@ -100,7 +97,17 @@ public class Pathway
             }
 		}
 	}
-	
+
+    public void setName(String name)
+    {
+        this.name = name;
+    }
+
+    public String getName()
+    {
+        return name;
+    }
+
 	public List<MetabolicReaction> getReactions()
 	{
 		return reactions;
@@ -110,6 +117,11 @@ public class Pathway
 	{
 		return chemicalNames;
 	}
+
+    public Set<String> getInchis()
+    {
+        return inchis;
+    }
 
     public boolean containsMolecule(String inchi)
     {
@@ -191,13 +203,10 @@ public class Pathway
         return output;
     }
 	
-	public Set<String> constructQueries(String organismID, Set<String> currencyMols) throws CHEBIException, FileNotFoundException
+	public Set<String> constructQueries(String organismID, Collection<String> extraNames, Set<String> currencyMols, File data) throws CHEBIException, FileNotFoundException, UnsupportedEncodingException
     {
-        Set<String> noCurrencyInchis = new HashSet<String>(inchis);
-        noCurrencyInchis.removeAll(currencyMols);
-
-		QueryBuilder qb = new QueryBuilder();
-		return qb.build(organismID, noCurrencyInchis);
+		QueryBuilder qb = new QueryBuilder(data);
+		return qb.build(organismID, extraNames, inchis, currencyMols);
 	}
 	
 	public boolean containsPair(String substrateInchi, String productInchi)

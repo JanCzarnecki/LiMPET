@@ -2,11 +2,11 @@ package uk.ac.bbk.REx.program;
 
 import org.sbml.jsbml.SBMLDocument;
 import org.sbml.jsbml.SBMLWriter;
-import uk.ac.ebi.mdk.domain.entity.DefaultEntityFactory;
-import uk.ac.ebi.mdk.domain.entity.EntityFactory;
-import uk.ac.ebi.mdk.domain.entity.Reconstruction;
+import uk.ac.ebi.mdk.domain.entity.*;
+import uk.ac.ebi.mdk.domain.entity.reaction.BiochemicalReaction;
 import uk.ac.ebi.mdk.domain.entity.reaction.MetabolicParticipant;
 import uk.ac.ebi.mdk.domain.entity.reaction.MetabolicReaction;
+import uk.ac.ebi.mdk.domain.identifier.Identifier;
 import uk.ac.ebi.mdk.domain.tool.AutomaticCompartmentResolver;
 import uk.ac.ebi.mdk.io.xml.sbml.SBMLIOUtil;
 import uk.ac.ebi.mdk.io.xml.sbml.SBMLReactionReader;
@@ -16,6 +16,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -71,7 +72,7 @@ public class Util
         return reactions;
     }
 
-    public static void writeOutSBML(Collection<MetabolicReaction> reactions, String file, PrintStream errorStream)
+    public static void writeOutSBML(Collection<MetabolicReaction> reactions, File file, PrintStream errorStream)
     {
         EntityFactory entityFactory = DefaultEntityFactory.getInstance();
         Reconstruction recon = entityFactory.newReconstruction();
@@ -87,7 +88,7 @@ public class Util
         SBMLWriter writer = new SBMLWriter();
         try
         {
-            writer.write(doc, new BufferedOutputStream(new FileOutputStream(new File(file))));
+            writer.write(doc, new BufferedOutputStream(new FileOutputStream(file)));
         }
         catch (XMLStreamException e)
         {

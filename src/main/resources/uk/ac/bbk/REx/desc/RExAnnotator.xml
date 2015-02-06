@@ -130,6 +130,15 @@
           <parameter>RgaiLinnaeusWrapper2/ConfigFile</parameter>
         </overrides>
       </configurationParameter>
+        <configurationParameter>
+            <name>userdataDir</name>
+            <type>String</type>
+            <multiValued>false</multiValued>
+            <mandatory>true</mandatory>
+            <overrides>
+                <parameter>CHEBIAnnotator/userdataDir</parameter>
+            </overrides>
+        </configurationParameter>
     </configurationParameters>
     <configurationParameterSettings>
       <nameValuePair>

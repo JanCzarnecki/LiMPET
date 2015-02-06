@@ -2,10 +2,9 @@ package uk.ac.bbk.REx.db.bkmDB;
 
 import org.apache.commons.io.IOUtils;
 import uk.ac.bbk.REx.exception.BKMException;
+import uk.ac.bbk.REx.utils.Files;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -27,7 +26,7 @@ public class BKMDB
 	
 	Pattern romanNumeralPatt;
 	
-	public BKMDB() throws BKMException
+	public BKMDB(File data) throws BKMException
     {
         try
         {
@@ -49,7 +48,8 @@ public class BKMDB
 
         try
         {
-            con = DriverManager.getConnection("jdbc:derby:data/db/bkm;");
+            con = DriverManager.getConnection(
+                    "jdbc:derby:" + data.getPath() + "/db/bkm;");
         }
         catch (SQLException e)
         {
@@ -304,9 +304,25 @@ public class BKMDB
 				return false;
 			}
 		}
-		else
+		else if(pathway1.contains(pathway2) || pathway2.contains(pathway1))
+        {
+            return true;
+        }
+        else
 		{
 			return false;
 		}
+    }
+
+    public boolean isPathwayInSet(String pathwaySet, String pathway)
+    {
+        if(pathway.contains(pathwaySet))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 }

@@ -14,7 +14,6 @@ import org.apache.uima.util.InvalidXMLException;
 import org.apache.uima.util.XMLInputSource;
 import org.junit.Test;
 import uk.ac.bbk.REx.db.documentDB.DocumentDB;
-import uk.ac.bbk.REx.program.CLI;
 
 import java.io.IOException;
 import java.sql.SQLException;

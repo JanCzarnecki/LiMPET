@@ -262,4 +262,28 @@ public class JCasUtils
 
         return new ArrayList<Metabolite>(metabolitesFound);
     }
+
+    public static int uniqueMetabolitesInCAS(JCas jcas)
+    {
+        Set<String> inchis = new HashSet<String>();
+        Set<String> names = new HashSet<String>();
+
+        for(Annotation chemicalAnnotation : jcas.getAnnotationIndex(Chemical.type))
+        {
+            Chemical chemical = (Chemical)chemicalAnnotation;
+
+            if(chemical.getInChiString() != null)
+            {
+                String inchi = chemical.getInChiString();
+                inchis.add(inchi);
+            }
+            else
+            {
+                names.add(chemical.getCoveredText());
+            }
+        }
+
+        int total = inchis.size() + names.size();
+        return total;
+    }
 }

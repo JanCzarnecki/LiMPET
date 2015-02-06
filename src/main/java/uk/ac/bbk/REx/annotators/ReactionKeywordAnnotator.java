@@ -71,6 +71,7 @@ public class ReactionKeywordAnnotator extends JCasAnnotator_ImplBase
 			}
 			
 			String stem = StemmerUtils.getStem(token.getCoveredText());
+            stem = stem.replaceAll("\\W", "");
 			
 			if(reactionWords.contains(stem))
 			{

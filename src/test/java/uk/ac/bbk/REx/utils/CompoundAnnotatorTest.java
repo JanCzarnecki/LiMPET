@@ -58,4 +58,16 @@ public class CompoundAnnotatorTest
 
         assertEquals("1.0 - 1.0 - 0.5 - 0.0", resultsString);
     }
+
+    @Test
+    public void sourceMolsScoreTest()
+    {
+        System.out.println(CompoundAnnotator.sourceMolsScore(10));
+    }
+
+    @Test
+    public void finalScoreTest()
+    {
+        System.out.println(CompoundAnnotator.finalScore(5.2));
+    }
 }

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <collectionReaderDescription xmlns="http://uima.apache.org/resourceSpecifier">
   <frameworkImplementation>org.apache.uima.java</frameworkImplementation>
-  <implementationName>uk.ac.bbk.readers.DirectoryReader</implementationName>
+  <implementationName>uk.ac.bbk.REx.readers.DirectoryReader</implementationName>
   <processingResourceMetaData>
-    <name>PubMedReader</name>
+    <name>DirectoryReader</name>
     <description/>
     <version>1.0</version>
     <vendor/>

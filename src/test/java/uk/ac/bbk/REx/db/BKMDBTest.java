@@ -5,6 +5,7 @@ import org.junit.Test;
 import uk.ac.bbk.REx.db.bkmDB.BKMDB;
 import uk.ac.bbk.REx.exception.BKMException;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -18,7 +19,7 @@ public class BKMDBTest
     @Before
     public void initialise() throws BKMException
     {
-        bkmDB = new BKMDB();
+        bkmDB = new BKMDB(new File("data/userdata"));
     }
 
     @Test

@@ -8,6 +8,8 @@ import uk.ac.bbk.REx.exception.CHEBIException;
 import uk.ac.bbk.REx.exception.NameNotFoundException;
 import uk.ac.bbk.REx.exception.NameTooShortException;
 
+import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -18,15 +20,14 @@ public class CHEBIDBTest
     CHEBIDB db;
 
     @Before
-    public void initialise() throws CHEBIException
-    {
-        db = new CHEBIDB();
+    public void initialise() throws CHEBIException, UnsupportedEncodingException {
+        db = new CHEBIDB(new File("data/userdata"));
     }
 
     @Test
     public void getCHEBIIDTest() throws NameNotFoundException, CHEBIException, NameTooShortException, SQLException
     {
-        int id = db.getCHEBIID("acetyl-CoA");
+        int id = db.getCHEBIID("α-mannosyl-3-phosphoglycerate");
         String inchi = db.getInchi(id);
 
         assertEquals("InChI=1S/C23H38N7O17P3S/c1-12(31)51-7-6-25-14(32)4-5-26-21(35)18(34)23(2,3)9-44-50(41,42)47-49" +

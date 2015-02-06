@@ -2,9 +2,12 @@ package uk.ac.bbk.REx.utils;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamException;
 
 import hu.u_szeged.rgai.bio.uima.tagger.LinnaeusSpecies;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.uima.analysis_engine.AnalysisEngine;
 import org.apache.uima.cas.CAS;
 import org.apache.uima.cas.CASException;
@@ -13,8 +16,10 @@ import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.tcas.Annotation;
 
 import org.apache.uima.resource.ResourceInitializationException;
+import uk.ac.bbk.REx.types.Chemical;
 import uk.ac.bbk.REx.types.Document;
 import uk.ac.bbk.REx.types.Section;
+import uk.ac.ebi.mdk.domain.DefaultIdentifierFactory;
 import uk.ac.ebi.mdk.domain.annotation.InChI;
 import uk.ac.ebi.mdk.domain.annotation.rex.RExExtract;
 import uk.ac.ebi.mdk.domain.annotation.rex.RExTag;
@@ -23,27 +28,26 @@ import uk.ac.ebi.mdk.domain.entity.EntityFactory;
 import uk.ac.ebi.mdk.domain.entity.Metabolite;
 import uk.ac.ebi.mdk.domain.entity.reaction.BiochemicalReaction;
 import uk.ac.ebi.mdk.domain.entity.reaction.MetabolicReaction;
+import uk.ac.ebi.mdk.domain.identifier.Identifier;
+import uk.ac.ebi.mdk.domain.identifier.IdentifierFactory;
 import uk.ac.ebi.mdk.domain.identifier.PubMedIdentifier;
+import uk.ac.ebi.mdk.domain.identifier.Taxonomy;
 import uk.ac.ebi.mdk.domain.identifier.basic.BasicChemicalIdentifier;
 import uk.ac.ebi.mdk.domain.tool.AutomaticCompartmentResolver;
 import uk.ac.ebi.mdk.io.xml.sbml.SBMLReactionReader;
 
 public class Converter 
 {
-    /**
-     * Converts reaction annotations contained in a collection of CAS's to MDK reactions.
-     *
-     * @param sectionsToIgnore
-     * @param speciesID The NCBI Taxonomy ID used in the extraction of reactions.
-     * @return
-     */
     public static List<BiochemicalReaction> convertUIMAReactionsToMDK(
-            File[] casFiles, AnalysisEngine ae, Collection<String> sectionsToIgnore, String speciesID,
-            Collection<Metabolite> seedMetabolites) throws IOException, ResourceInitializationException, CASException
+            File[] casFiles, AnalysisEngine ae, Collection<String> sectionsToIgnore, Collection<String> currencyMols) throws IOException, ResourceInitializationException, CASException
     {
+        IdentifierFactory identifiers = DefaultIdentifierFactory.getInstance();
         EntityFactory entityFactory = DefaultEntityFactory.getInstance();
         List<BiochemicalReaction> output = new ArrayList<BiochemicalReaction>();
         Map<String, Metabolite> metabolites = new HashMap<String, Metabolite>();
+        Set<String> names = new HashSet<String>();
+
+        Pattern pubmedPatt = Pattern.compile("^\\d+$");
 
         for(File casFile : casFiles)
         {
@@ -53,15 +57,32 @@ public class Converter
             in.close();
             JCas jcas = cas.getJCas();
 
-            String pmid = null;
+            String id = null;
             for(Annotation docAnnotation : jcas.getAnnotationIndex(Document.type))
             {
                 Document doc = (Document)docAnnotation;
-                pmid = doc.getId();
+                id = doc.getId();
             }
 
             //Find seed metabolites in document.
-            List<Metabolite> seedMetabolitesFound = JCasUtils.metabolitesInCAS(seedMetabolites, jcas);
+            //List<Metabolite> seedMetabolitesFound = JCasUtils.metabolitesInCAS(seedMetabolites, jcas);
+            int uniqueMetabolites = JCasUtils.uniqueMetabolitesInCAS(jcas);
+
+            Set<String> inchiSet = new HashSet<String>();
+            List<InChI> inchis = new ArrayList<InChI>();
+            for(Annotation chemicalA : jcas.getAnnotationIndex(Chemical.type))
+            {
+                Chemical c = (Chemical)chemicalA;
+                if(c.getInChiString() != null)
+                {
+                    inchiSet.add(c.getInChiString());
+                }
+            }
+
+            for(String inchiString : inchiSet)
+            {
+                inchis.add(new InChI(inchiString));
+            }
 
             CharacterIndex<Section> sectionIndex = new CharacterIndex<Section>(jcas, Section.type);
 
@@ -78,14 +99,12 @@ public class Converter
                     }
                 }
 
-                boolean correctSpecies = false;
-                for(LinnaeusSpecies species : JCasUtils.<LinnaeusSpecies>convertFSListToCollection(uimaReaction.getOrganisms()))
+                List<Identifier> organisms = new ArrayList<Identifier>();
+                for(Annotation speciesA : JCasUtils.convertFSListToCollection(uimaReaction.getOrganisms()))
                 {
-                    String id = species.getMostProbableSpeciesId().replace("species:ncbi:", "");
-                    if(speciesID.equals(id))
-                    {
-                        correctSpecies = true;
-                    }
+                    LinnaeusSpecies species = (LinnaeusSpecies)speciesA;
+                    String organismID = species.getMostProbableSpeciesId().replaceAll("species:ncbi:", "");
+                    organisms.add(identifiers.ofURL("http://identifiers.org/taxonomy/" + organismID));
                 }
 
                 Set<Metabolite> substrates = new HashSet<Metabolite>();
@@ -98,8 +117,10 @@ public class Converter
                         entityFactory,
                         metabolites,
                         substrates,
+                        names,
                         RExTag.Type.SUBSTRATE,
-                        metaboliteTags);
+                        metaboliteTags,
+                        currencyMols);
 
                 createMDKMetabolites(
                         uimaReaction,
@@ -107,8 +128,10 @@ public class Converter
                         entityFactory,
                         metabolites,
                         products,
+                        names,
                         RExTag.Type.PRODUCT,
-                        metaboliteTags);
+                        metaboliteTags,
+                        currencyMols);
 
                 BiochemicalReaction mdkReaction = entityFactory.biochemicalReaction(entityFactory.reaction());
 
@@ -122,8 +145,28 @@ public class Converter
                     mdkReaction.addProduct(product);
                 }
 
-                RExExtract extract = new RExExtract(new PubMedIdentifier(pmid), uimaReaction.getCoveredText(),
-                        metaboliteTags, correctSpecies, seedMetabolitesFound.size());
+                RExExtract extract;
+                if(id != null)
+                {
+                    String base = FilenameUtils.getBaseName(id);
+                    Matcher m = pubmedPatt.matcher(base);
+                    if(m.matches())
+                    {
+                        extract = new RExExtract(new PubMedIdentifier(m.group()), null, uimaReaction.getCoveredText(),
+                                metaboliteTags, organisms, inchis, false, 0, uniqueMetabolites);
+                    }
+                    else
+                    {
+                        extract = new RExExtract(null, id, uimaReaction.getCoveredText(),
+                                metaboliteTags, organisms, inchis, false, 0, uniqueMetabolites);
+                    }
+                }
+                else
+                {
+                    extract = new RExExtract(null, null, uimaReaction.getCoveredText(),
+                            metaboliteTags, organisms, inchis, false, 0, uniqueMetabolites);
+                }
+
                 mdkReaction.addAnnotation(extract);
                 output.add(mdkReaction);
             }
@@ -138,45 +181,56 @@ public class Converter
             EntityFactory entityFactory,
             Map<String, Metabolite> metabolites,
             Collection<Metabolite> metabolitesOutput,
+            Set<String> names,
             RExTag.Type type,
-            Collection<RExTag> tagsOutput)
+            Collection<RExTag> tagsOutput,
+            Collection<String> currencyMols)
     {
         for(Annotation chemicalAnnotation : annotations)
         {
             uk.ac.bbk.REx.types.Chemical uimaChemical = (uk.ac.bbk.REx.types.Chemical)chemicalAnnotation;
-            uk.ac.bbk.REx.types.Chemical refferedUIMAChemical = (uk.ac.bbk.REx.types.Chemical)uimaChemical.getRefersTo();
-            if(refferedUIMAChemical == null)
-            {
-                refferedUIMAChemical = uimaChemical;
-            }
 
-            if(!metabolites.containsKey(refferedUIMAChemical.getInChiString()))
+            uk.ac.bbk.REx.types.Annotation interAnnotation = (uk.ac.bbk.REx.types.Annotation)chemicalAnnotation;
+            uk.ac.bbk.REx.types.Annotation parentAnnotation = JCasUtils.getParentAnnotation(interAnnotation);
+            uk.ac.bbk.REx.types.Chemical parentUIMAChemical = (uk.ac.bbk.REx.types.Chemical)parentAnnotation;
+
+            Metabolite metabolite = entityFactory.metabolite();
+            if((!metabolites.containsKey(parentUIMAChemical.getInChiString())
+                    && !metabolites.containsKey("noinchi:" + parentUIMAChemical.getCoveredText()))
+            ||(!metabolites.containsKey(parentUIMAChemical.getInChiString())
+                &&(parentUIMAChemical.getInChiString() != null)))
             {
-                Metabolite metabolite = entityFactory.metabolite();
                 metabolite.setIdentifier(BasicChemicalIdentifier.nextIdentifier());
-                metabolite.setName(refferedUIMAChemical.getCoveredText());
-
-                if(refferedUIMAChemical.getInChiString() != null)
+                String name = parentUIMAChemical.getCoveredText();
+                if(names.contains(name))
                 {
-                    uk.ac.ebi.mdk.domain.annotation.Annotation inchi = new InChI(refferedUIMAChemical.getInChiString());
+                    name = name + "2";
+                }
+                metabolite.setName(name);
+                names.add(name);
+
+                if(parentUIMAChemical.getInChiString() != null)
+                {
+                    uk.ac.ebi.mdk.domain.annotation.Annotation inchi = new InChI(parentUIMAChemical.getInChiString());
                     metabolite.addAnnotation(inchi);
 
-                    metabolites.put(refferedUIMAChemical.getInChiString(), metabolite);
+                    metabolites.put(parentUIMAChemical.getInChiString(), metabolite);
                 }
-                else
+                else if(parentUIMAChemical.getInChiString() == null)
                 {
-                    metabolites.put("noinchi:" + refferedUIMAChemical.getCoveredText(), metabolite);
+                    metabolites.put("noinchi:" + parentUIMAChemical.getCoveredText(), metabolite);
                 }
             }
 
-            Metabolite metabolite;
-            if(refferedUIMAChemical.getInChiString() != null)
+            if(parentUIMAChemical.getInChiString() != null
+                    && metabolites.containsKey(parentUIMAChemical.getInChiString()))
             {
-                metabolite = metabolites.get(refferedUIMAChemical.getInChiString());
+                metabolite = metabolites.get(parentUIMAChemical.getInChiString());
             }
-            else
+            else if(parentUIMAChemical.getInChiString() == null
+                    && metabolites.containsKey("noinchi:" + parentUIMAChemical.getCoveredText()))
             {
-                metabolite = metabolites.get("noinchi:" + refferedUIMAChemical.getCoveredText());
+                metabolite = metabolites.get("noinchi:" + parentUIMAChemical.getCoveredText());
             }
 
             metabolitesOutput.add(metabolite);
@@ -184,7 +238,7 @@ public class Converter
             int start = uimaChemical.getBegin() - reaction.getBegin();
             int length = uimaChemical.getEnd() - uimaChemical.getBegin();
             RExTag tag = new RExTag(
-                    metabolite.getIdentifier().toString().replaceAll("/", "") + "_c", start, length, type);
+                    "m_" + metabolite.getIdentifier().toString().replaceAll("/", "") + "_c", start, length, type);
 
             tagsOutput.add(tag);
         }

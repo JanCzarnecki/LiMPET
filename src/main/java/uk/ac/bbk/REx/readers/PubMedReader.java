@@ -221,7 +221,7 @@ public class PubMedReader extends CollectionReader_ImplBase
         pmids = new ArrayList<String>(pmidsMap.keySet());
         try
         {
-            PubMedDownloader pmd = new PubMedDownloader(pmids);
+            //PubMedDownloader pmd = new PubMedDownloader(pmids);
         }
         catch(Exception e)
         {

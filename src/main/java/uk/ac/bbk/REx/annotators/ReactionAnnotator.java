@@ -448,51 +448,22 @@ public class ReactionAnnotator extends JCasAnnotator_ImplBase
 				score = (substrates.size() + products.size()) * scores.getEntity();
 				
 				List<ReactionKeyword> kwBefore = kwIndex.getAnnotationsBefore(substrates.get(0));
-				
-				boolean isAddPresent = false;
-				boolean isToPresent = false;
-				for(ReactionKeyword rw : kwBefore)
-				{
-					if(StemmerUtils.getStem(rw.getCoveredText()).equals("add")
-							|| StemmerUtils.getStem(rw.getCoveredText()).equals("transfer"))
-					{
-						isAddPresent = true;
-						break;
-					}
-				}
-				
-				List<ReactionKeyword> kwBetween = kwIndex.getAnnotationsBetween(substrates.get(0), substrates.get(substrates.size()-1));
-				for(ReactionKeyword rw : kwBetween)
-				{
-					if(rw.getKeywordType().equals("to"))
-					{
-						isToPresent = true;
-						break;
-					}
-				}
-				
-				if(isAddPresent && isToPresent)
-				{
-					score = score + (2*scores.getKeyword());
-				}
-				else
-				{
-					if(hasGoodWordBeforeSmallMolecules(kwBefore, "reaction", "production", cIndex))
-					{
-						score = score + scores.getKeyword();
-						//Get the last reaction word
-						List<ReactionKeyword> kwBeforeReverse = new ArrayList<ReactionKeyword>(kwBefore);
-						Collections.reverse(kwBeforeReverse);
-						for(ReactionKeyword rk : kwBeforeReverse)
-						{
-							if(rk.getKeywordType() == "reaction")
-							{
-								score = score - (tIndex.getAnnotationsBetween(rk, substrates.get(0)).size() * scores.getPhraseBetweenPenalty());
-								break;
-							}
-						}
-					}
-				}
+
+                if(hasGoodWordBeforeSmallMolecules(kwBefore, "reaction", "production", cIndex))
+                {
+                    score = score + scores.getKeyword();
+                    //Get the last reaction word
+                    List<ReactionKeyword> kwBeforeReverse = new ArrayList<ReactionKeyword>(kwBefore);
+                    Collections.reverse(kwBeforeReverse);
+                    for(ReactionKeyword rk : kwBeforeReverse)
+                    {
+                        if(rk.getKeywordType() == "reaction")
+                        {
+                            score = score - (tIndex.getAnnotationsBetween(rk, substrates.get(0)).size() * scores.getPhraseBetweenPenalty());
+                            break;
+                        }
+                    }
+                }
 				
 				//Between substrates and products
 				List<Token> tokensBetween = tIndex.getAnnotationsBetween(substrates.get(substrates.size()-1), products.get(0));
@@ -549,40 +520,11 @@ public class ReactionAnnotator extends JCasAnnotator_ImplBase
 				score = (substrates.size() + products.size() + 1) * scores.getEntity();
 				
 				List<ReactionKeyword> kwBefore = kwIndex.getAnnotationsBetween(enzyme, substrates.get(0));
-				
-				boolean isAddPresent = false;
-				boolean isToPresent = false;
-				for(ReactionKeyword rw : kwBefore)
-				{
-					if(StemmerUtils.getStem(rw.getCoveredText()).equals("add")
-							|| StemmerUtils.getStem(rw.getCoveredText()).equals("transfer"))
-					{
-						isAddPresent = true;
-						break;
-					}
-				}
-				
-				List<ReactionKeyword> kwBetween = kwIndex.getAnnotationsBetween(substrates.get(0), substrates.get(substrates.size()-1));
-				for(ReactionKeyword rw : kwBetween)
-				{
-					if(rw.getKeywordType().equals("to"))
-					{
-						isToPresent = true;
-						break;
-					}
-				}
-				
-				if(isAddPresent && isToPresent)
-				{
-					score = score + (2*scores.getKeyword());
-				}
-				else
-				{
-					if(hasGoodWordBeforeSmallMolecules(kwBefore, "reaction", "production", cIndex))
-					{
-						score = score + scores.getKeyword();
-					}
-				}
+
+                if(hasGoodWordBeforeSmallMolecules(kwBefore, "reaction", "production", cIndex))
+                {
+                    score = score + scores.getKeyword();
+                }
 				
 				//Between substrates and products
 				List<Token> tokensBetween = tIndex.getAnnotationsBetween(substrates.get(substrates.size()-1), products.get(0));

@@ -88,83 +88,103 @@
                 <annotation>
                     <rex:rex xmlns:rex="http://www.bbk.ac.uk/rex/">
                         <rex:extracts>
-                            <rex:extract isInCorrectOrganism="true" source="http://identifiers.org/pubmed/16233230/">
+                            <rex:extract isInCorrectOrganism="true" pubmed="http://identifiers.org/pubmed/16233230/" totalSeedMetabolitesInSource="2" totalMetabolitesInSource="10">
                                 <rex:sentence>Acetyl-CoA synthase couples acetate formation from  acetyl-CoA with the phospholylation of ADP via the mech-  anism of substrate-level phospholylation.</rex:sentence>
                                 <rex:tag id="M00024_c" length="10" start="52" type="substrate"/>
                                 <rex:tag id="M00016_c" length="7" start="28" type="product"/>
+                                <rex:organism id="http://identifiers.org/taxonomy/9606"/>
                             </rex:extract>
-                            <rex:extract isInCorrectOrganism="true" source="http://identifiers.org/pubmed/16233230/">
+                            <rex:extract isInCorrectOrganism="true" pubmed="http://identifiers.org/pubmed/16233230/" totalSeedMetabolitesInSource="2" totalMetabolitesInSource="10">
                                 <rex:sentence>According to their  proposal, net ATP can be only obtained from the conversion  of acetyl-CoA to acetate by the acetyl-CoA synthase reac-  tion (Fig. 3).</rex:sentence>
                                 <rex:tag id="M00024_c" length="10" start="83" type="substrate"/>
                                 <rex:tag id="M00016_c" length="7" start="97" type="product"/>
+                                <rex:organism id="http://identifiers.org/taxonomy/9606"/>
                             </rex:extract>
-                            <rex:extract isInCorrectOrganism="true" source="http://identifiers.org/pubmed/23093671/">
+                            <rex:extract isInCorrectOrganism="true" pubmed="http://identifiers.org/pubmed/23093671/" totalSeedMetabolitesInSource="2" totalMetabolitesInSource="10">
                                 <rex:sentence>Substrate level phosphorylation from the conversion of phosphoenolpyruvate to pyruvate and the conversion of acetyl-CoA to acetate is responsible for 2.0 ATP per glucose molecule for a total of 3.2 ATP/glucose (4).</rex:sentence>
                                 <rex:tag id="M00027_c" length="19" start="55" type="substrate"/>
                                 <rex:tag id="M00028_c" length="8" start="78" type="substrate"/>
                                 <rex:tag id="M00024_c" length="10" start="109" type="substrate"/>
                                 <rex:tag id="M00016_c" length="7" start="123" type="product"/>
+                                <rex:organism id="http://identifiers.org/taxonomy/9606"/>
                             </rex:extract>
-                            <rex:extract isInCorrectOrganism="true" source="http://identifiers.org/pubmed/16233230/">
+                            <rex:extract isInCorrectOrganism="true" file="awesome.txt" totalSeedMetabolitesInSource="2" totalMetabolitesInSource="10">
                                 <rex:sentence>Acetate formation from acetyl-CoA and ATP synthesis are  catalyzed by an acetyl-CoA synthetase (ADP forming).</rex:sentence>
                                 <rex:tag id="M00024_c" length="10" start="23" type="substrate"/>
                                 <rex:tag id="met17" length="3" start="38" type="substrate"/>
                                 <rex:tag id="M00016_c" length="7" start="0" type="product"/>
+                                <rex:organism id="http://identifiers.org/taxonomy/9606"/>
                             </rex:extract>
-                            <rex:extract isInCorrectOrganism="true" source="http://identifiers.org/pubmed/18372246/">
+                            <rex:extract isInCorrectOrganism="true" file="cool.pdf" totalSeedMetabolitesInSource="2" totalMetabolitesInSource="10">
                                 <rex:sentence>Next Section Abstract In Archaea, acetate formation and ATP synthesis from acetyl-CoA is catalyzed by an unusual ADP-forming acetyl-CoA synthetase (ACD) (acetyl-CoA + ADP + Pi ⇆ acetate + ATP + HS-CoA) catalyzing the formation of acetate from acetyl-CoA and concomitant ATP synthesis by the mechanism of substrate level phosphorylation.</rex:sentence>
                                 <rex:tag id="M00024_c" length="10" start="243" type="substrate"/>
                                 <rex:tag id="M00016_c" length="7" start="230" type="product"/>
+                                <rex:organism id="http://identifiers.org/taxonomy/9606"/>
                             </rex:extract>
                         </rex:extracts>
                         <rex:components>
                             <rex:reactants>
-                                <rex:compound extraction="10.0" id="M00024_c_rxn24_0"  isInBRENDA="true" isInBranch="false" isInSeed="true" relevance="5.0">
+                                <rex:compound extraction="10.0" id="M00024_c_rxn24_0"  isInBRENDA="true" isInSeed="true" relevance="5.0">
                                     <rex:alternativePathways>
-                                        <rex:pathway id="META000"/>
-                                        <rex:pathway id="META001"/>
+                                        <rex:pathway id="META000" name="pathwayName" />
+                                        <rex:pathway id="META001" name="pathwayName" />
                                     </rex:alternativePathways>
                                     <rex:otherPathways>
-                                        <rex:pathway id="META002"/>
+                                        <rex:pathway id="META002" name="pathwayName" />
                                     </rex:otherPathways>
+                                    <rex:branches>
+                                        <rex:branch id="29" length="4" score="0.21925628065428887"/>
+                                    </rex:branches>
                                 </rex:compound>
-                                <rex:compound extraction="10.0" id="M00028_c_rxn24_1" isInBRENDA="true" isInBranch="false" isInSeed="true" relevance="5.0">
+                                <rex:compound extraction="10.0" id="M00028_c_rxn24_1" isInBRENDA="true" isInSeed="true" relevance="5.0">
                                     <rex:alternativePathways>
-                                        <rex:pathway id="META000"/>
-                                        <rex:pathway id="META001"/>
+                                        <rex:pathway id="META000" name="pathwayName" />
+                                        <rex:pathway id="META001" name="pathwayName" />
                                     </rex:alternativePathways>
                                     <rex:otherPathways>
-                                        <rex:pathway id="META002"/>
+                                        <rex:pathway id="META002" name="pathwayName" />
                                     </rex:otherPathways>
+                                    <rex:branches>
+                                        <rex:branch id="29" length="4" score="0.21925628065428887"/>
+                                    </rex:branches>
                                 </rex:compound>
-                                <rex:compound extraction="10.0" id="M00027_c_rxn24_2" isInBRENDA="true" isInBranch="false" isInSeed="true" relevance="5.0">
+                                <rex:compound extraction="10.0" id="M00027_c_rxn24_2" isInBRENDA="true" isInSeed="true" relevance="5.0">
                                     <rex:alternativePathways>
-                                        <rex:pathway id="META000"/>
-                                        <rex:pathway id="META001"/>
+                                        <rex:pathway id="META000" name="pathwayName" />
+                                        <rex:pathway id="META001" name="pathwayName" />
                                     </rex:alternativePathways>
                                     <rex:otherPathways>
-                                        <rex:pathway id="META002"/>
+                                        <rex:pathway id="META002" name="pathwayName" />
                                     </rex:otherPathways>
+                                    <rex:branches>
+                                        <rex:branch id="29" length="4" score="0.21925628065428887"/>
+                                    </rex:branches>
                                 </rex:compound>
-                                <rex:compound extraction="10.0" id="met17_rxn24_3" isInBRENDA="true" isInBranch="false" isInSeed="true" relevance="5.0">
+                                <rex:compound extraction="10.0" id="met17_rxn24_3" isInBRENDA="true" isInSeed="true" relevance="5.0">
                                     <rex:alternativePathways>
-                                        <rex:pathway id="META000"/>
-                                        <rex:pathway id="META001"/>
+                                        <rex:pathway id="META000" name="pathwayName" />
+                                        <rex:pathway id="META001" name="pathwayName" />
                                     </rex:alternativePathways>
                                     <rex:otherPathways>
-                                        <rex:pathway id="META002"/>
+                                        <rex:pathway id="META002" name="pathwayName" />
                                     </rex:otherPathways>
+                                    <rex:branches>
+                                        <rex:branch id="29" length="4" score="0.21925628065428887"/>
+                                    </rex:branches>
                                 </rex:compound>
                             </rex:reactants>
                             <rex:products>
-                                <rex:compound extraction="10.0" id="M00016_c_rxn24_4" isInBRENDA="true" isInBranch="false" isInSeed="true" relevance="5.0">
+                                <rex:compound extraction="10.0" id="M00016_c_rxn24_4" isInBRENDA="true" isInSeed="true" relevance="5.0">
                                     <rex:alternativePathways>
-                                        <rex:pathway id="META000"/>
-                                        <rex:pathway id="META001"/>
+                                        <rex:pathway id="META000" name="pathwayName" />
+                                        <rex:pathway id="META001" name="pathwayName" />
                                     </rex:alternativePathways>
                                     <rex:otherPathways>
-                                        <rex:pathway id="META002"/>
+                                        <rex:pathway id="META002" name="pathwayName" />
                                     </rex:otherPathways>
+                                    <rex:branches>
+                                        <rex:branch id="29" length="4" score="0.21925628065428887"/>
+                                    </rex:branches>
                                 </rex:compound>
                             </rex:products>
                         </rex:components>

@@ -1,0 +1,256 @@
+[
+	{
+		"longOpt" : "metaCycDownload",
+		"description" : "Download a MetaCyc pathway (or group of pathways) to an SBML file.",
+		"options" : 
+		[
+			{
+				"longOpt" : "pathwayIDs",
+				"shortOpt" : "p",
+				"argName" : "\"pathwayID|pathwayID|...\"",
+				"description" : "A list of MetaCyc pathway IDs (each separated by a |) surrounded by double quotes."
+			},
+			{
+				"longOpt" : "output",
+				"shortOpt" : "o",
+				"argName" : "path",
+				"description" : "The file in which to download the pathway."
+			}
+		]
+	},
+	{
+		"longOpt" : "seedQueries",
+		"description" : "Construct PubMed queries to search for articles relevant to a pathway.",
+		"options" : 
+		[
+			{
+				"longOpt" : "pathway",
+				"shortOpt" : "p",
+				"argName" : "path",
+				"description" : "The pathway (in SBML format) with which to construct PubMed queries."
+			},
+			{
+				"longOpt" : "speciesID",
+				"shortOpt" : "s",
+				"argName" : "NCBITaxID",
+				"description" : "The NCBI Taxonomy ID of the species of interest."
+			},
+			{
+			    "longOpt" : "speciesNames",
+			    "shortOpt" : "n",
+			    "argName" : "path",
+			    "description" : "A file containing names of the species of interest that are not in NCBI Taxonomy."
+			},
+			{
+				"longOpt" : "output",
+				"shortOpt" : "o",
+				"argName" : "path",
+				"description" : "The output file in which to save the constructed queries."
+			},
+			{
+			    "longOpt" : "data",
+                "shortOpt" : "d",
+                "argName" : "path",
+                "description" : "The path to the userdata directory (the default value is ./data/userdata)."
+			}
+		]
+	},
+	{
+		"longOpt" : "downloadArticles",
+		"description" : "Download articles retrieved by a set of PubMed queries.",
+		"options" : 
+		[
+			{
+				"longOpt" : "queries",
+				"shortOpt" : "q",
+				"argName" : "path",
+				"description" : "A file containing a list of PubMed queries."
+			},
+			{
+				"longOpt" : "numOfArticles",
+				"shortOpt" : "n",
+				"argName" : "integer",
+				"description" : "The maximum number of articles to download per query."
+			},
+			{
+				"longOpt" : "outputDir",
+				"shortOpt" : "o",
+				"argName" : "path",
+				"description" : "The directory in which to save downloaded articles."
+			}
+		]
+	},
+	{
+		"longOpt" : "extraction",
+		"description" : "Extract metabolic reactions from a set of articles.",
+		"options" : 
+		[
+			{
+				"longOpt" : "articles",
+				"shortOpt" : "a",
+				"argName" : "path",
+				"description" : "A directory of articles to be mined."
+			},
+			{
+				"longOpt" : "speciesID",
+				"shortOpt" : "s",
+				"argName" : "NCBITaxID",
+				"description" : "The NCBI Taxonomy ID of the species of interest if you are providing extra names."
+			},
+			{
+			    "longOpt" : "speciesNames",
+                "shortOpt" : "sn",
+                "argName" : "path",
+                "description" : "A file containing names of the species of interest that are not in NCBI Taxonomy."
+			},
+			{
+			    "longOpt" : "scores",
+			    "shortOpt" : "c",
+			    "argName" : "path",
+			    "description" : "The json scores file."
+			},
+			{
+				"longOpt" : "output",
+				"shortOpt" : "o",
+				"argName" : "path",
+				"description" : "The file in which to save the extracted reactions."
+			},
+            {
+                "longOpt" : "data",
+                 "shortOpt" : "d",
+                 "argName" : "path",
+                 "description" : "The path to the userdata directory (the default value is ./data/userdata)."
+            }
+		]
+	},
+	{
+		"longOpt" : "scorePathway",
+		"description" : "Determine the relevance of extracted reactions to the seed pathway.",
+		"options" : 
+		[
+			{
+				"longOpt" : "input",
+				"shortOpt" : "i",
+				"argName" : "path",
+				"description" : "The pathway produced by the 'extraction' command."
+			},
+			{
+				"longOpt" : "output",
+				"shortOpt" : "o",
+				"argName" : "path",
+				"description" : "The file in which to save the pathway with relevance scores."
+			},
+			{
+                "longOpt" : "speciesID",
+                "shortOpt" : "sp",
+                "argName" : "NCBITaxID",
+                "description" : "The NCBI Taxonomy ID of the species of interest."
+            },
+			{
+				"longOpt" : "seed",
+				"shortOpt" : "p",
+				"argName" : "path",
+				"description" : "The seed pathway used to find reactions."
+			},
+			{
+			    "longOpt" : "pathwayIDs",
+                "shortOpt" : "pid",
+                "argName" : "\"pathwayID|pathwayID|...\"",
+                "description" : "A list of MetaCyc pathway IDs (each separated by a |) surrounded by double quotes, if the seed pathway was obtained from MetaCyc."
+			},
+			{
+				"longOpt" : "scores",
+				"shortOpt" : "s",
+				"argName" : "path",
+				"description" : "The json scores file."
+			},
+            {
+                "longOpt" : "data",
+                 "shortOpt" : "d",
+                 "argName" : "path",
+                 "description" : "The path to the userdata directory (the default value is ./data/userdata)."
+            }
+		]
+	},
+	{
+		"longOpt" : "cytoscape",
+		"description" : "Convert a pathway in SBML format to files that can be easily visualised in Cytoscape.",
+		"options" : 
+		[
+			{
+				"longOpt" : "pathway",
+				"shortOpt" : "p",
+				"argName" : "path",
+				"description" : "The extracted pathway to convert to Cytoscape readable files."
+			},
+			{
+				"longOpt" : "outputDir",
+				"shortOpt" : "o",
+				"argName" : "path",
+				"description" : "The output directory in which to save the Cytoscape files."
+			}
+		]
+	},
+	{
+	    "longOpt" : "humanOutput",
+        "description" : "Convert a pathway in SBML format to a human readable TSV that can be imported into a spreadsheet program.",
+        "options" :
+        [
+            {
+                "longOpt" : "pathway",
+                "shortOpt" : "p",
+                "argName" : "path",
+                "description" : "The extracted pathway to convert to Cytoscape readable files."
+            },
+            {
+                "longOpt" : "threshold",
+                "shortOpt" : "t",
+                "argName" : "number between 0 and 1",
+                "description" : "The extraction threshold for reactions to be included."
+            },
+            {
+                "longOpt" : "output",
+                "shortOpt" : "o",
+                "argName" : "path",
+                "description" : "The output file in which to save the reactions."
+            }
+        ]
+	},
+	{
+	    "longOpt" : "rescoreExtraction",
+        "description" : "Recalculate the extraction scores in a pathway.",
+        "options" :
+        [
+            {
+                "longOpt" : "pathway",
+                "shortOpt" : "p",
+                "argName" : "path",
+                "description" : "The pathway to recalculate extraction scores for."
+            },
+            {
+                "longOpt" : "seed",
+                "shortOpt" : "s",
+                "argName" : "path",
+                "description" : "The seed pathway used to extract the pathway."
+            },
+            {
+                "longOpt" : "seedName",
+                "shortOpt" : "n",
+                "argName" : "name",
+                "description" : "The name of the seed pathway."
+            },
+			{
+			    "longOpt" : "scores",
+			    "shortOpt" : "c",
+			    "argName" : "path",
+			    "description" : "The json scores file."
+			},
+            {
+                "longOpt" : "outputDir",
+                "shortOpt" : "o",
+                "argName" : "path",
+                "description" : "The output directory in which to save the Cytoscape files."
+            }
+        ]
+	}
+]

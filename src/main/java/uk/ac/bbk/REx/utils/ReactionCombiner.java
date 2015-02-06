@@ -65,8 +65,140 @@ public class ReactionCombiner
             }
         }
 
-        Set<Set<MetabolicReaction>> allLinkedReactions = new HashSet<Set<MetabolicReaction>>();
+        Set<Set<MetabolicReaction>> reactionGroups = new HashSet<Set<MetabolicReaction>>();
+        Set<MetabolicReaction> linkedReactions = new HashSet<MetabolicReaction>();
 
+        for(MetabolicReaction r : singleReactions)
+        {
+            if(!linkedReactions.contains(r))
+            {
+                Set<MetabolicReaction> commonReactions = new HashSet<MetabolicReaction>();
+                Set<MetabolicReaction> links = new HashSet<MetabolicReaction>();
+
+                boolean first = true;
+                boolean allCurrency = true;
+                for(MetabolicParticipant substrate : r.getReactants())
+                {
+                    Metabolite m = substrate.getMolecule();
+                    String id = m.getIdentifier().toString();
+                    String inchi = getMetaboliteInChI(m);
+
+                    if(!currencyMols.contains(inchi))
+                    {
+                        if(first)
+                        {
+                            commonReactions.addAll(substrateIndex.get(id));
+                        }
+                        else
+                        {
+                            commonReactions.retainAll(substrateIndex.get(id));
+                        }
+
+                        allCurrency = false;
+                    }
+
+                    first = false;
+                }
+
+                if(allCurrency)
+                {
+                    commonReactions.clear();
+                }
+
+                allCurrency = true;
+                for(MetabolicParticipant product : r.getProducts())
+                {
+                    Metabolite m = product.getMolecule();
+                    String id = m.getIdentifier().toString();
+                    String inchi = getMetaboliteInChI(m);
+
+                    if(!currencyMols.contains(inchi))
+                    {
+                        commonReactions.retainAll(productIndex.get(id));
+                        allCurrency = false;
+                    }
+                }
+
+                if(allCurrency)
+                {
+                    commonReactions.clear();
+                }
+
+                for(MetabolicReaction possibleLink : commonReactions)
+                {
+                    Set<MetabolicReaction> theseCommonReactions = new HashSet<MetabolicReaction>();
+
+                    first = true;
+                    allCurrency = true;
+                    for(MetabolicParticipant substrate : possibleLink.getReactants())
+                    {
+                        Metabolite m = substrate.getMolecule();
+                        String id = m.getIdentifier().toString();
+                        String inchi = getMetaboliteInChI(m);
+
+                        if(!currencyMols.contains(inchi))
+                        {
+                            if(first)
+                            {
+                                theseCommonReactions.addAll(substrateIndex.get(id));
+                            }
+                            else
+                            {
+                                theseCommonReactions.retainAll(substrateIndex.get(id));
+                            }
+
+                            allCurrency = false;
+                        }
+
+                        first = false;
+                    }
+
+                    if(allCurrency)
+                    {
+                        theseCommonReactions.clear();
+                    }
+
+                    allCurrency = true;
+                    for(MetabolicParticipant product : possibleLink.getProducts())
+                    {
+                        Metabolite m = product.getMolecule();
+                        String id = m.getIdentifier().toString();
+                        String inchi = getMetaboliteInChI(m);
+
+                        if(!currencyMols.contains(inchi))
+                        {
+                            theseCommonReactions.retainAll(productIndex.get(id));
+                            allCurrency = false;
+                        }
+                    }
+
+                    if(allCurrency)
+                    {
+                        theseCommonReactions.clear();
+                    }
+
+                    if(theseCommonReactions.contains(r))
+                    {
+                        linkedReactions.add(r);
+                        linkedReactions.add(possibleLink);
+                        links.add(r);
+                        links.add(possibleLink);
+                    }
+                }
+
+                reactionGroups.add(links);
+            }
+        }
+
+        List<MetabolicReaction> combinedReactions = new ArrayList<MetabolicReaction>();
+        for(Set<MetabolicReaction> group : reactionGroups)
+        {
+            combinedReactions.add(combineReactions(group, entityFactory));
+        }
+
+        return combinedReactions;
+
+        /*
         for(MetabolicReaction r : singleReactions)
         {
             for(MetabolicParticipant substrate : r.getReactants())
@@ -131,10 +263,13 @@ public class ReactionCombiner
 
                     for(MetabolicReaction reactionInCurrentGroup : group)
                     {
-                        for(MetabolicReaction linkedReaction : reactionLinks.get(reactionInCurrentGroup))
+                        if(reactionLinks.containsKey(reactionInCurrentGroup))
                         {
-                            addToGroup.add(linkedReaction);
-                            reactionsLeft.remove(linkedReaction);
+                            for(MetabolicReaction linkedReaction : reactionLinks.get(reactionInCurrentGroup))
+                            {
+                                addToGroup.add(linkedReaction);
+                                reactionsLeft.remove(linkedReaction);
+                            }
                         }
                     }
 
@@ -153,6 +288,7 @@ public class ReactionCombiner
         }
 
         return combinedReactions;
+        */
     }
 
     private static String getMetaboliteInChI(Metabolite metabolite)

@@ -37,7 +37,7 @@ public class AcronymAnnotator extends JCasAnnotator_ImplBase
 		LOGGER = UIMAFramework.getLogger(AcronymAnnotator.class);
 		LOGGER.log(Level.INFO, "Initialising acronym annotator.");
 		figurePatt = Pattern.compile("Fig\\.\\s*\\d");
-		noWordPatt = Pattern.compile("^[^A-Za-z]$");
+		noWordPatt = Pattern.compile("^[^A-Za-z]+$");
 	}
 	
 	@Override

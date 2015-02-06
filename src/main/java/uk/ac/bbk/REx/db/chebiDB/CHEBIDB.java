@@ -1,8 +1,7 @@
 package uk.ac.bbk.REx.db.chebiDB;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -21,6 +20,7 @@ import org.apache.commons.io.IOUtils;
 import uk.ac.bbk.REx.exception.CHEBIException;
 import uk.ac.bbk.REx.exception.NameNotFoundException;
 import uk.ac.bbk.REx.exception.NameTooShortException;
+import uk.ac.bbk.REx.utils.Files;
 import uk.ac.bbk.REx.utils.Strings;
 
 /**
@@ -31,6 +31,7 @@ public class CHEBIDB
 	private Connection con;
     private String stmtTemp;
     private Pattern stereoPatt;
+    private Pattern atePatt;
     private Map<String, PreparedStatement> statements;
     private PreparedStatement idStatement;
     private PreparedStatement parentIDStmt;
@@ -38,8 +39,7 @@ public class CHEBIDB
     private PreparedStatement inchiStmt;
     private PreparedStatement idFromInchiStmt;
 	
-	public CHEBIDB() throws CHEBIException
-	{
+	public CHEBIDB(File data) throws CHEBIException, UnsupportedEncodingException {
         try
         {
             //Not always necessary, but some Java installations require this line.
@@ -60,14 +60,14 @@ public class CHEBIDB
 
         try
 		{
-			con = DriverManager.getConnection("jdbc:derby:data/db/chebi;");
+			con = DriverManager.getConnection("jdbc:derby:" + data.getPath() + "/db/chebi;");
 		} 
 		catch (SQLException e) 
 		{
 			throw new CHEBIException(e);
 		}
 
-		try
+        try
 		{
             InputStream is = new BufferedInputStream(
                     CHEBIDB.class.getResourceAsStream("/uk/ac/bbk/REx/db/chebiDB/variationsStmt.sql"));
@@ -75,6 +75,7 @@ public class CHEBIDB
             is.close();
 
 			stereoPatt = Pattern.compile("(\\A|\\W)[dl]-");
+            atePatt = Pattern.compile("ate$");
 			
 			orderOfVariations = new ArrayList<String>();
             InputStream orderOfVariationsIS = new BufferedInputStream(
@@ -174,6 +175,11 @@ public class CHEBIDB
 				{
                     int distance = Strings.computeLevenshteinDistance(name.toLowerCase(), rs.getString("exact"));
 
+                    if((double)distance/(double)name.length() > 0.5)
+                    {
+                        continue;
+                    }
+
                     if(lowest == null || distance < lowest);
                     {
                         lowest = distance;
@@ -191,8 +197,17 @@ public class CHEBIDB
 		{
 			throw new CHEBIException(e);
 		}
-		
-		throw new NameNotFoundException();
+
+        Matcher mat = atePatt.matcher(name);
+        if(mat.find())
+        {
+            name = mat.replaceAll("ic acid");
+            return getCHEBIID(name);
+        }
+        else
+        {
+            throw new NameNotFoundException();
+        }
 	}
 
     public Set<Integer> getIDFromInchi(String inchi) throws SQLException
@@ -224,9 +239,12 @@ public class CHEBIDB
         String greek = lowercase.replaceAll("α", "alpha");
         greek = greek.replaceAll("β", "beta");
         output.put("exact", greek);
-		output.put("squares", greek.replaceAll("\\[.+?\\]", ""));
-		output.put("spaces", greek.replaceAll("\\s+", ""));
-		output.put("nonWordChars", greek.replaceAll("\\W+", ""));
+
+        String squares = greek.replaceAll("\\[.+?\\]", "");
+        squares = squares.replaceAll("\\(.+?\\)", "");
+		output.put("squares", squares);
+		output.put("spaces", squares.replaceAll("\\s+", ""));
+		output.put("nonWordChars", squares.replaceAll("\\W+", ""));
 
 		Matcher stereoMat = stereoPatt.matcher(lowercase);
         String nonStereoName = lowercase;
@@ -236,8 +254,10 @@ public class CHEBIDB
             stereoMat = stereoPatt.matcher(nonStereoName);
         }
 
+        nonStereoName = nonStereoName.replaceAll("-\\w-", "-");
+
 		output.put("stereo", nonStereoName.replaceAll("\\W+|α|β", ""));
-        output.put("everythingButLetters", nonStereoName.replaceAll("[^A-Za-z]+|α|β", ""));
+        output.put("everythingButLetters", squares.replaceAll("[^A-Za-z]+|α|β", ""));
 		
 		return output;
 	}

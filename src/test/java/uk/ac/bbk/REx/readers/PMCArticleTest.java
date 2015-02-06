@@ -52,7 +52,7 @@ public class PMCArticleTest
         String contentString = contentScanner.next();
         contentScanner.close();
 
-        assertEquals(contentString, article.getContent());
+        assertEquals(contentString, article.getAvailableText());
     }
 
     @Test
